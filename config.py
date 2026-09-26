@@ -7,55 +7,57 @@ load_dotenv()
 BOT_TOKEN: str = os.environ["BOT_TOKEN"]
 ADMIN_ID: int = int(os.environ["ADMIN_ID"])
 
-# ── Webhook ────────────────────────────────────────────────────────────────────
-WEBHOOK_HOST: str = os.environ["WEBHOOK_HOST"]
+# ── Webhook (не нужны если регистрируешь вручную через Telegram API) ───────────
+WEBHOOK_HOST: str = os.getenv("WEBHOOK_HOST", "")
 WEBHOOK_PATH: str = os.getenv("WEBHOOK_PATH", "/webhook")
 WEBHOOK_URL: str = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
 
 # ── Crypto wallets ─────────────────────────────────────────────────────────────
+_PLACEHOLDER = "⏳ Адрес ещё не добавлен"
+
 WALLETS: dict[str, dict] = {
     "USDT (TRC-20)": {
-        "address": os.environ["WALLET_USDT_TRC20"],
+        "address": os.getenv("WALLET_USDT_TRC20", _PLACEHOLDER),
         "network": "TRON (TRC-20)",
         "emoji": "💚",
     },
     "USDT (ERC-20)": {
-        "address": os.environ["WALLET_USDT_ERC20"],
+        "address": os.getenv("WALLET_USDT_ERC20", _PLACEHOLDER),
         "network": "Ethereum (ERC-20)",
         "emoji": "💚",
     },
     "TRON (TRX)": {
-        "address": os.environ["WALLET_TRON"],
+        "address": os.getenv("WALLET_TRON", _PLACEHOLDER),
         "network": "TRON",
         "emoji": "🔴",
     },
     "Bitcoin (BTC)": {
-        "address": os.environ["WALLET_BTC"],
+        "address": os.getenv("WALLET_BTC", _PLACEHOLDER),
         "network": "Bitcoin",
         "emoji": "🟠",
     },
     "Ethereum (ETH)": {
-        "address": os.environ["WALLET_ETH"],
+        "address": os.getenv("WALLET_ETH", _PLACEHOLDER),
         "network": "Ethereum",
         "emoji": "🔷",
     },
     "USDC (ERC-20)": {
-        "address": os.environ["WALLET_USDC_ERC20"],
+        "address": os.getenv("WALLET_USDC_ERC20", _PLACEHOLDER),
         "network": "Ethereum (ERC-20)",
         "emoji": "🔵",
     },
     "BNB (BSC)": {
-        "address": os.environ["WALLET_BNB"],
+        "address": os.getenv("WALLET_BNB", _PLACEHOLDER),
         "network": "BNB Smart Chain",
         "emoji": "🟡",
     },
     "Solana (SOL)": {
-        "address": os.environ["WALLET_SOL"],
+        "address": os.getenv("WALLET_SOL", _PLACEHOLDER),
         "network": "Solana",
         "emoji": "🟣",
     },
     "TON": {
-        "address": os.environ["WALLET_TON"],
+        "address": os.getenv("WALLET_TON", _PLACEHOLDER),
         "network": "TON",
         "emoji": "💎",
     },
