@@ -123,20 +123,12 @@ def kb_main_inline() -> dict:
 
 
 def kb_main_reply() -> dict:
-    """Reply keyboard with webapp button — sendData() works from here."""
-    host = os.getenv("WEBHOOK_HOST", "https://cld-mu.vercel.app")
-    return {
-        "keyboard": [[{
-            "text": "Chat with Claude",
-            "web_app": {"url": f"{host}/webapp"}
-        }]],
-        "resize_keyboard": True,
-        "is_persistent": True,
-    }
+    """Removed — reply keyboard caused duplicate Chat with Claude button."""
+    return {"remove_keyboard": True}
 
 
 def kb_main() -> dict:
-    """Legacy alias — used for back_main inline flow (no reply kb needed)."""
+    """Legacy alias."""
     return kb_main_inline()
 
 
@@ -192,8 +184,7 @@ BANNER = os.getenv("BANNER_FILE_ID", "https://raw.githubusercontent.com/ivanfj63
 WELCOME = (
     "<b>Claude Pro — subscription via crypto</b>\n\n"
     "Get full access to Claude AI: Sonnet 5, Opus 5, Haiku — all models, "
-    "no usage caps, Claude Code, Projects, and more.\n\n"
-    "Access is activated manually within 30 minutes after payment."
+    "no usage caps, Claude Code, Projects, and more."
 )
 
 # About — Claude model changelog as of September 2026
@@ -228,30 +219,18 @@ ABOUT = (
 
 
 def plans_text() -> str:
-    header  = f"{'Plan':<16} {'Price':>9}  {'Includes'}"
-    divider = "─" * 48
-    rows    = [header, divider]
-
-    descs = {
-        "pro":     "5× usage, Code, Projects, all models",
-        "max_5x":  "5× more than Pro, early access",
-        "max_20x": "20× more than Pro, highest limits",
-    }
-
+    rows = []
     for key, plan in PLANS.items():
-        name  = plan["label"]
-        price = f"${plan['price_usd']}/mo"
-        desc  = descs.get(key, "")
         badge = f"  [{plan['badge']}]" if plan.get("badge") else ""
-        rows.append(f"{name:<16} {price:>9}")
-        rows.append(f"  {desc}{badge}")
-        rows.append("")
+        rows.append(f"{plan['label']}  —  ${plan['price_usd']}/mo{badge}")
 
-    table = "\n".join(rows).rstrip()
+    listing = "\n".join(rows)
     return (
         "<b>Claude — plans and pricing</b>\n\n"
-        "Official plans from claude.com/pricing.\n\n"
-        f"<pre>{table}</pre>\n\n"
+        "<pre>"
+        f"{listing}"
+        "</pre>\n\n"
+        "<i>Official plans · claude.com/pricing</i>\n\n"
         "Select a plan:"
     )
 
@@ -353,13 +332,12 @@ def _handle_message(msg: dict) -> None:
 
         if param == "subscribe":
             send_photo(chat_id, BANNER, WELCOME, reply_markup=kb_main_inline())
-            send(chat_id, "👇", reply_markup=kb_main_reply())
             send(chat_id, plans_text(), reply_markup=kb_plans())
             return
 
-        # Default start
+        # Default start — remove any old reply keyboard, send welcome
+        send(chat_id, "\u200b", reply_markup={"remove_keyboard": True})
         send_photo(chat_id, BANNER, WELCOME, reply_markup=kb_main_inline())
-        send(chat_id, "👇", reply_markup=kb_main_reply())
         return
 
     # Admin: /reply <user_id> <text>

