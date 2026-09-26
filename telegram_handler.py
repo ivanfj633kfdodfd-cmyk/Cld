@@ -110,16 +110,32 @@ def btn_webapp(text: str, url: str) -> dict:
 
 # ── Keyboards ──────────────────────────────────────────────────────────────────
 
-def kb_main() -> dict:
-    host = os.getenv("WEBHOOK_HOST", "https://cld-mu.vercel.app")
+def kb_main_inline() -> dict:
     return {"inline_keyboard": [
         [btn("Subscribe", "subscribe", "success")],
         [
-            btn_webapp("Chat with Claude", f"{host}/webapp"),
-            btn("About",  "about", "primary"),
+            btn("About",   "about",   "primary"),
+            btn("Support", "support"),
         ],
-        [btn("Support", "support")],
     ]}
+
+
+def kb_main_reply() -> dict:
+    """Reply keyboard with webapp button — sendData() works from here."""
+    host = os.getenv("WEBHOOK_HOST", "https://cld-mu.vercel.app")
+    return {
+        "keyboard": [[{
+            "text": "Chat with Claude",
+            "web_app": {"url": f"{host}/webapp"}
+        }]],
+        "resize_keyboard": True,
+        "is_persistent": True,
+    }
+
+
+def kb_main() -> dict:
+    """Legacy alias — used for back_main inline flow (no reply kb needed)."""
+    return kb_main_inline()
 
 
 def kb_plans() -> dict:
@@ -291,9 +307,26 @@ def notify_new_user(user: dict, total: int) -> None:
 
 def handle_update(data: dict) -> None:
     if "message" in data:
-        _handle_message(data["message"])
+        msg = data["message"]
+        # web_app_data comes as a special message field
+        if "web_app_data" in msg:
+            _handle_webapp_data(msg)
+        else:
+            _handle_message(msg)
     elif "callback_query" in data:
         _handle_callback(data["callback_query"])
+
+
+# ── Web App data handler ───────────────────────────────────────────────────────
+
+def _handle_webapp_data(msg: dict) -> None:
+    chat_id  = msg["chat"]["id"]
+    user_id  = msg["from"]["id"]
+    payload  = msg.get("web_app_data", {}).get("data", "")
+
+    if payload == "open_subscribe":
+        clear_state(user_id)
+        send(chat_id, plans_text(), reply_markup=kb_plans())
 
 
 # ── Message handler ────────────────────────────────────────────────────────────
@@ -311,7 +344,10 @@ def _handle_message(msg: dict) -> None:
             notify_new_user(user, len(_known_users))
 
         clear_state(user_id)
-        send_photo(chat_id, BANNER, WELCOME, reply_markup=kb_main())
+        # 1. Photo + inline buttons (Subscribe / About / Support)
+        send_photo(chat_id, BANNER, WELCOME, reply_markup=kb_main_inline())
+        # 2. Persistent reply keyboard with webapp button (enables sendData)
+        send(chat_id, "👇", reply_markup=kb_main_reply())
         return
 
     # Admin: /reply <user_id> <text>

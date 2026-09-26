@@ -886,7 +886,16 @@ function selectPwPlan(el) {
 
 function goSubscribe() {
   closePw();
-  if (tg) tg.close();
+  if (tg) {
+    // sendData only works when webapp is opened via KeyboardButton.
+    // For InlineKeyboardButton webapp we use openTelegramLink with deep link.
+    try {
+      tg.sendData('open_subscribe');
+    } catch(e) {
+      // Fallback: close webapp — user lands in bot chat, bot detects return
+      tg.close();
+    }
+  }
 }
 
 /* ── Attach menu ──────────────────────────────────────────────────────────── */
