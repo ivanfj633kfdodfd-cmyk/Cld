@@ -5,91 +5,128 @@ load_dotenv()
 
 # ── Bot ────────────────────────────────────────────────────────────────────────
 BOT_TOKEN: str = os.environ["BOT_TOKEN"]
-ADMIN_ID: int = int(os.environ["ADMIN_ID"])
+ADMIN_ID: int  = int(os.environ["ADMIN_ID"])
 
-# ── Webhook (не нужны если регистрируешь вручную через Telegram API) ───────────
+# ── Webhook ────────────────────────────────────────────────────────────────────
 WEBHOOK_HOST: str = os.getenv("WEBHOOK_HOST", "")
 WEBHOOK_PATH: str = os.getenv("WEBHOOK_PATH", "/webhook")
-WEBHOOK_URL: str = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
+WEBHOOK_URL:  str = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
 
 # ── Crypto wallets ─────────────────────────────────────────────────────────────
-_PLACEHOLDER = "⏳ Адрес ещё не добавлен"
+_PLACEHOLDER = "Address not configured yet"
 
 WALLETS: dict[str, dict] = {
-    "USDT (TRC-20)": {
+    "USDT TRC-20": {
         "address": os.getenv("WALLET_USDT_TRC20", _PLACEHOLDER),
         "network": "TRON (TRC-20)",
-        "emoji": "💚",
     },
-    "USDT (ERC-20)": {
+    "USDT ERC-20": {
         "address": os.getenv("WALLET_USDT_ERC20", _PLACEHOLDER),
         "network": "Ethereum (ERC-20)",
-        "emoji": "💚",
     },
-    "TRON (TRX)": {
-        "address": os.getenv("WALLET_TRON", _PLACEHOLDER),
-        "network": "TRON",
-        "emoji": "🔴",
-    },
-    "Bitcoin (BTC)": {
-        "address": os.getenv("WALLET_BTC", _PLACEHOLDER),
-        "network": "Bitcoin",
-        "emoji": "🟠",
-    },
-    "Ethereum (ETH)": {
-        "address": os.getenv("WALLET_ETH", _PLACEHOLDER),
-        "network": "Ethereum",
-        "emoji": "🔷",
-    },
-    "USDC (ERC-20)": {
+    "USDC ERC-20": {
         "address": os.getenv("WALLET_USDC_ERC20", _PLACEHOLDER),
         "network": "Ethereum (ERC-20)",
-        "emoji": "🔵",
     },
-    "BNB (BSC)": {
+    "TRX": {
+        "address": os.getenv("WALLET_TRON", _PLACEHOLDER),
+        "network": "TRON",
+    },
+    "BTC": {
+        "address": os.getenv("WALLET_BTC", _PLACEHOLDER),
+        "network": "Bitcoin",
+    },
+    "ETH": {
+        "address": os.getenv("WALLET_ETH", _PLACEHOLDER),
+        "network": "Ethereum",
+    },
+    "BNB": {
         "address": os.getenv("WALLET_BNB", _PLACEHOLDER),
-        "network": "BNB Smart Chain",
-        "emoji": "🟡",
+        "network": "BNB Smart Chain (BEP-20)",
     },
-    "Solana (SOL)": {
+    "SOL": {
         "address": os.getenv("WALLET_SOL", _PLACEHOLDER),
         "network": "Solana",
-        "emoji": "🟣",
     },
     "TON": {
         "address": os.getenv("WALLET_TON", _PLACEHOLDER),
         "network": "TON",
-        "emoji": "💎",
     },
 }
 
-# ── Plans ──────────────────────────────────────────────────────────────────────
+# ── Plans (based on claude.com/pricing) ───────────────────────────────────────
+#
+# Claude Pro  — $20/month
+# We offer 1, 3, 6, 12 month packs at the same per-month rate.
+# Savings are applied as a discount on multi-month packs.
+#
 PLANS: dict[str, dict] = {
-    "1_month": {
-        "label": "1 месяц",
+    "pro_1m": {
+        "label":     "Claude Pro — 1 month",
         "price_usd": 20,
-        "emoji": "📅",
-        "desc": "Полный доступ на 30 дней",
+        "per_month": 20,
+        "saving":    None,
+        "badge":     None,
+        "features": [
+            "Everything in Free",
+            "More usage limits",
+            "Claude Code included",
+            "Claude Design, Slides, Docs",
+            "Claude Science",
+            "Projects",
+            "All Claude models (Sonnet, Opus, Haiku)",
+            "Priority access at high traffic",
+        ],
     },
-    "3_months": {
-        "label": "3 месяца",
-        "price_usd": 50,
-        "emoji": "📆",
-        "desc": "Экономия $10 — самый популярный",
-        "badge": "🔥 Хит",
+    "pro_3m": {
+        "label":     "Claude Pro — 3 months",
+        "price_usd": 54,
+        "per_month": 18,
+        "saving":    "Save $6",
+        "badge":     "Popular",
+        "features": [
+            "Everything in Free",
+            "More usage limits",
+            "Claude Code included",
+            "Claude Design, Slides, Docs",
+            "Claude Science",
+            "Projects",
+            "All Claude models (Sonnet, Opus, Haiku)",
+            "Priority access at high traffic",
+        ],
     },
-    "6_months": {
-        "label": "6 месяцев",
-        "price_usd": 90,
-        "emoji": "🗓",
-        "desc": "Экономия $30 — лучшая цена",
-        "badge": "💎 Выгода",
+    "pro_6m": {
+        "label":     "Claude Pro — 6 months",
+        "price_usd": 102,
+        "per_month": 17,
+        "saving":    "Save $18",
+        "badge":     "Best value",
+        "features": [
+            "Everything in Free",
+            "More usage limits",
+            "Claude Code included",
+            "Claude Design, Slides, Docs",
+            "Claude Science",
+            "Projects",
+            "All Claude models (Sonnet, Opus, Haiku)",
+            "Priority access at high traffic",
+        ],
     },
-    "1_year": {
-        "label": "12 месяцев",
-        "price_usd": 160,
-        "emoji": "🏆",
-        "desc": "Экономия $80 — максимальная выгода",
-        "badge": "👑 Pro",
+    "pro_12m": {
+        "label":     "Claude Pro — 12 months",
+        "price_usd": 200,
+        "per_month": 17,
+        "saving":    "Save $40",
+        "badge":     "Annual",
+        "features": [
+            "Everything in Free",
+            "More usage limits",
+            "Claude Code included",
+            "Claude Design, Slides, Docs",
+            "Claude Science",
+            "Projects",
+            "All Claude models (Sonnet, Opus, Haiku)",
+            "Priority access at high traffic",
+        ],
     },
 }

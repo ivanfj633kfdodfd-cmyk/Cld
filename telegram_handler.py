@@ -3,10 +3,10 @@ Sync Telegram bot handler using httpx.
 No aiogram, no asyncio — works reliably in Vercel serverless.
 
 Button colors via Bot API 9.4 (style field):
-  "success"  → green
-  "danger"   → red
-  "primary"  → blue/accent
-  (no style) → default grey
+  "success"  — green
+  "danger"   — red
+  "primary"  — blue/accent
+  (no style) — default
 """
 from __future__ import annotations
 
@@ -33,15 +33,19 @@ def api(method: str, **kwargs) -> dict:
         return {}
 
 
-def send(chat_id: int, text: str, reply_markup=None, parse_mode="HTML") -> dict:
-    payload = {"chat_id": chat_id, "text": text, "parse_mode": parse_mode}
+def send(chat_id: int, text: str, reply_markup=None, parse_mode: str = "HTML") -> dict:
+    payload: dict = {"chat_id": chat_id, "text": text, "parse_mode": parse_mode}
     if reply_markup:
         payload["reply_markup"] = reply_markup
     return api("sendMessage", **payload)
 
 
-def send_photo(chat_id: int, photo: str, caption: str, reply_markup=None, parse_mode="HTML") -> dict:
-    payload = {"chat_id": chat_id, "photo": photo, "caption": caption, "parse_mode": parse_mode}
+def send_photo(chat_id: int, photo: str, caption: str,
+               reply_markup=None, parse_mode: str = "HTML") -> dict:
+    payload: dict = {
+        "chat_id": chat_id, "photo": photo,
+        "caption": caption, "parse_mode": parse_mode,
+    }
     if reply_markup:
         payload["reply_markup"] = reply_markup
     return api("sendPhoto", **payload)
@@ -51,36 +55,30 @@ def delete_msg(chat_id: int, message_id: int) -> None:
     api("deleteMessage", chat_id=chat_id, message_id=message_id)
 
 
-def answer_callback(callback_id: str, text: str = "", show_alert: bool = False) -> None:
-    api("answerCallbackQuery", callback_query_id=callback_id, text=text, show_alert=show_alert)
+def answer_cb(callback_id: str, text: str = "", show_alert: bool = False) -> None:
+    api("answerCallbackQuery",
+        callback_query_id=callback_id, text=text, show_alert=show_alert)
 
 
-def replace(chat_id: int, old_msg_id: int, text: str, reply_markup=None) -> dict:
-    """Send new text message THEN delete old — no flicker."""
+def replace(chat_id: int, old_id: int, text: str, reply_markup=None) -> dict:
+    """Send new text THEN delete old — no flicker."""
     result = send(chat_id, text, reply_markup=reply_markup)
-    delete_msg(chat_id, old_msg_id)
+    delete_msg(chat_id, old_id)
     return result
 
 
-def replace_photo(chat_id: int, old_msg_id: int, photo: str, caption: str, reply_markup=None) -> dict:
+def replace_photo(chat_id: int, old_id: int, photo: str,
+                  caption: str, reply_markup=None) -> dict:
     """Send new photo THEN delete old — no flicker."""
     result = send_photo(chat_id, photo, caption, reply_markup=reply_markup)
-    delete_msg(chat_id, old_msg_id)
+    delete_msg(chat_id, old_id)
     return result
 
 
-# ── Button builder helper ──────────────────────────────────────────────────────
-# style: "success" (green), "danger" (red), "primary" (blue), None (default)
+# ── Button helpers ─────────────────────────────────────────────────────────────
 
-def btn(text: str, callback_data: str, style: str | None = None) -> dict:
-    b: dict = {"text": text, "callback_data": callback_data}
-    if style:
-        b["style"] = style
-    return b
-
-
-def btn_url(text: str, url: str, style: str | None = None) -> dict:
-    b: dict = {"text": text, "url": url}
+def btn(text: str, cb: str, style: str | None = None) -> dict:
+    b: dict = {"text": text, "callback_data": cb}
     if style:
         b["style"] = style
     return b
@@ -92,167 +90,196 @@ def btn_webapp(text: str, url: str) -> dict:
 
 # ── Keyboards ──────────────────────────────────────────────────────────────────
 
-def kb_main():
+def kb_main() -> dict:
     return {"inline_keyboard": [
-        [btn("Оформить подписку", "subscribe", "success")],
+        [btn("Subscribe", "subscribe", "success")],
         [
-            btn("Открыть чат",  "open_chat", "primary"),
-            btn("О сервисе",    "about"),
+            btn("Open chat",  "open_chat", "primary"),
+            btn("About",      "about"),
         ],
-        [btn("Помощь", "support")],
+        [btn("Support", "support")],
     ]}
 
 
-def kb_plans():
+def kb_plans() -> dict:
     rows = []
     for key, plan in PLANS.items():
-        rows.append([btn(
-            f"{plan['label']} — ${plan['price_usd']}",
-            f"plan:{key}",
-            "primary"
-        )])
-    rows.append([btn("Назад", "back_main")])
+        label = plan["label"]
+        price = f"${plan['price_usd']}"
+        badge = f"  {plan['badge']}" if plan.get("badge") else ""
+        rows.append([btn(f"{label} — {price}{badge}", f"plan:{key}", "primary")])
+    rows.append([btn("Back", "back_main")])
     return {"inline_keyboard": rows}
 
 
-def kb_currencies(plan_key: str):
+def kb_currencies(plan_key: str) -> dict:
     keys = list(WALLETS.keys())
     rows = []
     for i in range(0, len(keys), 2):
         chunk = keys[i:i + 2]
         rows.append([btn(c, f"pay:{plan_key}:{c}") for c in chunk])
-    rows.append([btn("Назад к тарифам", "subscribe")])
+    rows.append([btn("Back to plans", "subscribe")])
     return {"inline_keyboard": rows}
 
 
-def kb_paid(plan_key: str):
+def kb_paid(plan_key: str) -> dict:
     return {"inline_keyboard": [
-        [btn("Я оплатил", f"paid:{plan_key}", "success")],
-        [btn("Сменить валюту", f"plan:{plan_key}")],
-        [btn("Главная",        "back_main")],
+        [btn("I have paid", f"paid:{plan_key}", "success")],
+        [btn("Change currency", f"plan:{plan_key}")],
+        [btn("Main menu", "back_main")],
     ]}
 
 
-def kb_back():
-    return {"inline_keyboard": [[btn("Главная", "back_main")]]}
+def kb_back() -> dict:
+    return {"inline_keyboard": [[btn("Main menu", "back_main")]]}
 
 
-def kb_cancel():
-    return {"inline_keyboard": [[btn("Отмена", "back_main", "danger")]]}
+def kb_cancel() -> dict:
+    return {"inline_keyboard": [[btn("Cancel", "back_main", "danger")]]}
 
 
-def kb_ticket():
+def kb_ticket() -> dict:
     return {"inline_keyboard": [
-        [btn("Отправить тикет", "send_ticket", "success")],
-        [btn("Переписать",      "support")],
-        [btn("Отмена",          "back_main", "danger")],
+        [btn("Send ticket", "send_ticket", "success")],
+        [btn("Rewrite",     "support")],
+        [btn("Cancel",      "back_main", "danger")],
     ]}
 
 
-def kb_webapp():
-    webapp_url = os.getenv("WEBHOOK_HOST", "https://cld-mu.vercel.app") + "/webapp"
+def kb_webapp_open() -> dict:
+    host = os.getenv("WEBHOOK_HOST", "https://cld-mu.vercel.app")
     return {"inline_keyboard": [
-        [btn_webapp("Открыть чат Claude", webapp_url)],
-        [btn("Назад", "back_main")],
+        [btn_webapp("Open Claude chat", f"{host}/webapp")],
+        [btn("Back", "back_main")],
     ]}
 
 
-# ── Texts ──────────────────────────────────────────────────────────────────────
+# ── Static texts ───────────────────────────────────────────────────────────────
 
 BANNER = os.getenv("BANNER_FILE_ID", "https://i.imgur.com/4M34hi2.png")
 
 WELCOME = (
-    "<b>Claude AI — подписка с доступом к Sonnet 4.5 / Opus 4</b>\n\n"
-    "Пользуйтесь самыми мощными моделями без ограничений прямо в Telegram.\n\n"
-    "◾ Неограниченные сообщения\n"
-    "◾ Web-приложение с историей чатов\n"
-    "◾ Оплата криптовалютой — анонимно\n"
-    "◾ Доступ активируется вручную в течение 30 минут\n\n"
-    "Выберите действие:"
+    "<b>Claude Pro — subscription via crypto</b>\n\n"
+    "Get full access to Claude AI: Sonnet, Opus, Haiku — all models, "
+    "no usage caps, Claude Code, Projects, and more.\n\n"
+    "Access is activated manually within 30 minutes after payment."
+)
+
+ABOUT = (
+    "<b>About this service</b>\n\n"
+    "We provide Claude Pro subscriptions paid anonymously via cryptocurrency.\n\n"
+    "<b>How it works</b>\n"
+    "1. Choose a plan\n"
+    "2. Select a payment currency\n"
+    "3. Send the exact amount to the wallet address shown\n"
+    "4. Tap \"I have paid\" — we get notified instantly\n"
+    "5. Access is activated within 30 minutes\n\n"
+    "<b>Plans are based on official claude.com pricing.</b>\n"
+    "For help, use the Support button."
 )
 
 
 def plans_text() -> str:
-    """
-    Прайс-лист в виде HTML-таблицы с выравниванием через моноширинный шрифт.
-    Использует <blockquote> (Bot API 6.6+) и <code> для выравнивания колонок.
-    """
+    """Price table using monospaced code block for alignment."""
     lines = [
-        "<b>Тарифы Claude AI</b>\n",
+        "<b>Claude Pro — plans and pricing</b>",
+        "",
+        "Based on the official Claude Pro plan ($20/month).",
+        "Multi-month packs include a discount.",
+        "",
         "<blockquote>",
-        "<code>Период       Цена    Выгода</code>",
-        "<code>─────────────────────────────</code>",
+        "<code>Plan          Price    Per mo   Saving</code>",
+        "<code>────────────────────────────────────────</code>",
     ]
-
-    savings = {
-        "1_month":  "",
-        "3_months": "−$10",
-        "6_months": "−$30",
-        "1_year":   "−$80",
-    }
-
     for key, plan in PLANS.items():
-        label  = plan["label"].ljust(12)
-        price  = f"${plan['price_usd']}".ljust(7)
-        saving = savings.get(key, "")
-        badge  = f"  {plan.get('badge', '')}" if plan.get("badge") else ""
-        lines.append(f"<code>{label} {price} {saving}</code>{badge}")
-
+        label   = plan["label"].replace("Claude Pro — ", "").ljust(13)
+        price   = f"${plan['price_usd']}".ljust(8)
+        per_mo  = f"${plan['per_month']}/mo".ljust(8)
+        saving  = plan["saving"] or "—"
+        lines.append(f"<code>{label} {price} {per_mo} {saving}</code>")
     lines.append("</blockquote>")
-    lines.append("\nВыберите тариф:")
+    lines.append("")
+    lines.append("Select a plan:")
     return "\n".join(lines)
+
+
+def plan_detail_text(plan_key: str) -> str:
+    plan = PLANS[plan_key]
+    feats = "\n".join(f"  {f}" for f in plan["features"])
+    saving = f"\n<b>Saving:</b> {plan['saving']}" if plan["saving"] else ""
+    return (
+        f"<b>{plan['label']}</b>\n"
+        f"<b>Price:</b> ${plan['price_usd']} total"
+        f" (${plan['per_month']}/month){saving}\n\n"
+        f"<b>Includes:</b>\n{feats}\n\n"
+        "Select payment currency:"
+    )
+
+
+def requisites_text(plan_key: str, currency: str) -> str:
+    plan   = PLANS[plan_key]
+    wallet = WALLETS[currency]
+    return (
+        f"<b>Payment details</b>\n\n"
+        f"<b>Plan:</b> {plan['label']}\n"
+        f"<b>Amount:</b> <b>${plan['price_usd']}</b> in {currency}\n"
+        f"<b>Network:</b> {wallet['network']}\n\n"
+        f"<b>Wallet address:</b>\n"
+        f"<code>{wallet['address']}</code>\n\n"
+        "<blockquote>Send only via the network shown above.\n"
+        "Transfers on a different network will not be credited.</blockquote>\n\n"
+        "After sending, tap <b>\"I have paid\"</b>."
+    )
 
 
 # ── Update router ──────────────────────────────────────────────────────────────
 
 def handle_update(data: dict) -> None:
     if "message" in data:
-        handle_message(data["message"])
+        _handle_message(data["message"])
     elif "callback_query" in data:
-        handle_callback(data["callback_query"])
+        _handle_callback(data["callback_query"])
 
 
 # ── Message handler ────────────────────────────────────────────────────────────
 
-def handle_message(msg: dict) -> None:
+def _handle_message(msg: dict) -> None:
     chat_id = msg["chat"]["id"]
     user_id = msg["from"]["id"]
     text    = msg.get("text", "")
 
-    # /start
     if text == "/start":
         clear_state(user_id)
         send_photo(chat_id, BANNER, WELCOME, reply_markup=kb_main())
         return
 
-    # Admin /reply <user_id> <text>
+    # Admin: /reply <user_id> <text>
     if text.startswith("/reply") and user_id == ADMIN_ID:
         parts = text.split(" ", 2)
         if len(parts) < 3:
-            send(chat_id, "Формат: /reply &lt;user_id&gt; &lt;текст&gt;")
+            send(chat_id, "Usage: /reply &lt;user_id&gt; &lt;message&gt;")
             return
         try:
             target = int(parts[1])
-            send(target, f"<b>Ответ поддержки:</b>\n\n{parts[2]}")
-            send(chat_id, "Ответ отправлен.")
+            send(target, f"<b>Support reply:</b>\n\n{parts[2]}")
+            send(chat_id, "Sent.")
         except Exception as e:
-            send(chat_id, f"Ошибка: {e}")
+            send(chat_id, f"Error: {e}")
         return
 
-    # FSM: waiting for ticket text
+    # FSM: ticket text input
     if get_state(user_id) == "support:waiting":
         store = get_data(user_id)
         set_data(user_id, {**store, "ticket_text": text})
         set_state(user_id, "support:confirm")
 
-        prompt_id = store.get("prompt_msg_id")
-        if prompt_id:
-            delete_msg(chat_id, prompt_id)
+        if store.get("prompt_msg_id"):
+            delete_msg(chat_id, store["prompt_msg_id"])
         delete_msg(chat_id, msg["message_id"])
 
         preview = send(
             chat_id,
-            f"<b>Предпросмотр тикета:</b>\n\n<blockquote>{text}</blockquote>\n\nВсё верно? Отправить?",
+            f"<b>Ticket preview:</b>\n\n<blockquote>{text}</blockquote>\n\nLooks good?",
             reply_markup=kb_ticket(),
         )
         new_id = preview.get("result", {}).get("message_id")
@@ -262,7 +289,7 @@ def handle_message(msg: dict) -> None:
 
 # ── Callback handler ───────────────────────────────────────────────────────────
 
-def handle_callback(cb: dict) -> None:
+def _handle_callback(cb: dict) -> None:
     cb_id   = cb["id"]
     data    = cb.get("data", "")
     msg     = cb["message"]
@@ -271,68 +298,44 @@ def handle_callback(cb: dict) -> None:
     user    = cb["from"]
     user_id = user["id"]
 
-    answer_callback(cb_id)
+    answer_cb(cb_id)
 
-    # ── Main menu ──────────────────────────────────────────────────────────────
+    # Main menu
     if data == "back_main":
         clear_state(user_id)
-        # Always: send first → delete after (no flicker)
         replace_photo(chat_id, msg_id, BANNER, WELCOME, reply_markup=kb_main())
         return
 
     if data == "about":
-        replace(chat_id, msg_id,
-            "<b>О сервисе</b>\n\n"
-            "Этот бот позволяет оформить подписку на Claude AI.\n\n"
-            "<b>Как это работает:</b>\n"
-            "1. Выберите тариф и валюту\n"
-            "2. Переведите сумму на указанный адрес\n"
-            "3. Нажмите «Я оплатил» — мы получим уведомление\n"
-            "4. В течение 30 минут доступ активируется вручную\n\n"
-            "<b>Поддержка:</b> кнопка «Помощь»",
-            reply_markup=kb_main()
-        )
+        replace(chat_id, msg_id, ABOUT, reply_markup=kb_back())
         return
 
     if data == "open_chat":
         replace(chat_id, msg_id,
             "<b>Claude Web App</b>\n\n"
-            "Встроенный чат с историей диалогов.\n"
-            "Без активной подписки доступ ограничен.",
-            reply_markup=kb_webapp()
+            "Chat interface with conversation history.\n"
+            "An active subscription is required to send messages.",
+            reply_markup=kb_webapp_open()
         )
         return
 
-    # ── Subscription flow ──────────────────────────────────────────────────────
+    # Subscription flow
     if data == "subscribe":
         replace(chat_id, msg_id, plans_text(), reply_markup=kb_plans())
         return
 
     if data.startswith("plan:"):
         plan_key = data.split(":", 1)[1]
-        plan = PLANS[plan_key]
         replace(chat_id, msg_id,
-            f"<b>{plan['label']} — ${plan['price_usd']}</b>\n"
-            f"<i>{plan['desc']}</i>\n\n"
-            "<b>Выберите валюту оплаты:</b>",
+            plan_detail_text(plan_key),
             reply_markup=kb_currencies(plan_key)
         )
         return
 
     if data.startswith("pay:"):
         _, plan_key, currency = data.split(":", 2)
-        plan   = PLANS[plan_key]
-        wallet = WALLETS[currency]
         replace(chat_id, msg_id,
-            f"<b>Реквизиты для оплаты</b>\n\n"
-            f"<b>Тариф:</b> {plan['label']}\n"
-            f"<b>Сумма:</b> <b>${plan['price_usd']}</b> в {currency}\n"
-            f"<b>Сеть:</b> {wallet['network']}\n\n"
-            f"<b>Адрес кошелька:</b>\n"
-            f"<code>{wallet['address']}</code>\n\n"
-            "<blockquote>⚠️ Переводите строго в указанной сети.\n"
-            "Перевод в другую сеть не зачтётся.</blockquote>\n\n"
-            "После оплаты нажмите <b>«Я оплатил»</b>.",
+            requisites_text(plan_key, currency),
             reply_markup=kb_paid(plan_key)
         )
         return
@@ -340,34 +343,37 @@ def handle_callback(cb: dict) -> None:
     if data.startswith("paid:"):
         plan_key  = data.split(":", 1)[1]
         plan      = PLANS[plan_key]
-        full_name = " ".join(filter(None, [user.get("first_name",""), user.get("last_name","")]))
-        username  = user.get("username", "")
+        full_name = " ".join(filter(None, [
+            user.get("first_name", ""), user.get("last_name", "")
+        ]))
+        username = user.get("username", "")
 
         send(ADMIN_ID,
-            f"<b>Заявка на оплату</b>\n\n"
-            f"👤 <a href='tg://user?id={user_id}'>{full_name}</a>\n"
-            f"🆔 <code>{user_id}</code>\n"
-            f"📛 @{username or '—'}\n\n"
-            f"📦 {plan['label']} — ${plan['price_usd']}\n\n"
-            f"Проверь транзакцию и выдай доступ."
+            f"<b>Payment claim</b>\n\n"
+            f"User: <a href='tg://user?id={user_id}'>{full_name}</a>\n"
+            f"ID: <code>{user_id}</code>\n"
+            f"Username: @{username or 'none'}\n\n"
+            f"Plan: {plan['label']} — ${plan['price_usd']}\n\n"
+            "Verify the transaction and grant access."
         )
-        answer_callback(cb_id, "Уведомление отправлено!", show_alert=True)
+        answer_cb(cb_id, "Notification sent to admin.", show_alert=True)
         replace(chat_id, msg_id,
-            "<b>Заявка принята!</b>\n\n"
-            f"Тариф: <b>{plan['label']}</b>\n\n"
-            "Доступ будет активирован в течение <b>30 минут</b>.\n"
-            "Если прошло больше — напишите в «Помощь».",
+            "<b>Request received</b>\n\n"
+            f"Plan: <b>{plan['label']}</b>\n\n"
+            "The admin has been notified. "
+            "Access will be activated within <b>30 minutes</b>.\n\n"
+            "If it takes longer, please open a support ticket.",
             reply_markup=kb_back()
         )
         return
 
-    # ── Support ────────────────────────────────────────────────────────────────
+    # Support
     if data == "support":
         clear_state(user_id)
         set_state(user_id, "support:waiting")
         result    = send(chat_id,
-            "<b>Поддержка</b>\n\n"
-            "Напишите ваш вопрос следующим сообщением 👇",
+            "<b>Support</b>\n\n"
+            "Describe your issue and send it as the next message.",
             reply_markup=kb_cancel()
         )
         delete_msg(chat_id, msg_id)
@@ -378,19 +384,22 @@ def handle_callback(cb: dict) -> None:
     if data == "send_ticket":
         store     = get_data(user_id)
         ticket    = store.get("ticket_text", "")
-        full_name = " ".join(filter(None, [user.get("first_name",""), user.get("last_name","")]))
-        username  = user.get("username", "")
+        full_name = " ".join(filter(None, [
+            user.get("first_name", ""), user.get("last_name", "")
+        ]))
+        username = user.get("username", "")
 
         send(ADMIN_ID,
-            f"<b>Новый тикет</b>\n\n"
-            f"👤 <a href='tg://user?id={user_id}'>{full_name}</a>\n"
-            f"🆔 <code>{user_id}</code>  |  @{username or '—'}\n\n"
+            f"<b>New support ticket</b>\n\n"
+            f"From: <a href='tg://user?id={user_id}'>{full_name}</a>\n"
+            f"ID: <code>{user_id}</code>  |  @{username or 'none'}\n\n"
             f"<blockquote>{ticket}</blockquote>"
         )
         clear_state(user_id)
         replace(chat_id, msg_id,
-            "<b>Тикет отправлен!</b>\n\n"
-            "Администратор ответит в ближайшее время.",
+            "<b>Ticket sent</b>\n\n"
+            "The admin will reply shortly. "
+            "Replies arrive in this chat from the bot.",
             reply_markup=kb_back()
         )
         return
