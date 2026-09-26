@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
   <title>Claude</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="config.js"></script>
   <style>
 /* ─── Biometric lock screen ───────────────────────────────────────────────── */
 #bioLock{
@@ -1003,14 +1004,10 @@ function selectPwPlan(el) {
 function goSubscribe() {
   closePw();
   if (tg) {
-    // sendData only works when webapp is opened via KeyboardButton.
-    // For InlineKeyboardButton webapp we use openTelegramLink with deep link.
-    try {
-      tg.sendData('open_subscribe');
-    } catch(e) {
-      // Fallback: close webapp — user lands in bot chat, bot detects return
-      tg.close();
-    }
+    // Deep link: opens bot chat and triggers /start subscribe
+    // BOT_USERNAME is injected server-side or hardcoded here
+    const botUsername = window.BOT_USERNAME || 'ClaudeSubBot';
+    tg.openTelegramLink(`https://t.me/${botUsername}?start=subscribe`);
   }
 }
 

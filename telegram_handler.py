@@ -338,16 +338,26 @@ def _handle_message(msg: dict) -> None:
     user_id = user["id"]
     text    = msg.get("text", "")
 
-    if text == "/start":
+    if text.startswith("/start"):
+        # Parse deep link parameter: /start subscribe → show plans immediately
+        parts = text.split(" ", 1)
+        param = parts[1].strip() if len(parts) > 1 else ""
+
         # Track new users
         if user_id not in _known_users:
             _known_users.add(user_id)
             notify_new_user(user, len(_known_users))
 
         clear_state(user_id)
-        # 1. Photo + inline buttons (Subscribe / About / Support)
+
+        if param == "subscribe":
+            send_photo(chat_id, BANNER, WELCOME, reply_markup=kb_main_inline())
+            send(chat_id, "👇", reply_markup=kb_main_reply())
+            send(chat_id, plans_text(), reply_markup=kb_plans())
+            return
+
+        # Default start
         send_photo(chat_id, BANNER, WELCOME, reply_markup=kb_main_inline())
-        # 2. Persistent reply keyboard with webapp button (enables sendData)
         send(chat_id, "👇", reply_markup=kb_main_reply())
         return
 

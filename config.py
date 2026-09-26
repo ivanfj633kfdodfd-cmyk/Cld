@@ -6,6 +6,7 @@ load_dotenv()
 # ── Bot ────────────────────────────────────────────────────────────────────────
 BOT_TOKEN: str = os.environ["BOT_TOKEN"]
 ADMIN_ID: int  = int(os.environ["ADMIN_ID"])
+BOT_USERNAME: str = os.getenv("BOT_USERNAME", "")  # e.g. "ClaudeSubBot"
 
 # ── Webhook ────────────────────────────────────────────────────────────────────
 WEBHOOK_HOST: str = os.getenv("WEBHOOK_HOST", "")

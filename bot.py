@@ -28,6 +28,13 @@ def webhook():
         return Response(str(e), status=500)
 
 
+@app.route("/webapp/config.js", methods=["GET"])
+def webapp_config():
+    username = os.getenv("BOT_USERNAME", "")
+    js = f"window.BOT_USERNAME = '{username}';\n"
+    return Response(js, status=200, mimetype="application/javascript")
+
+
 @app.route("/", methods=["GET"])
 def index():
     return Response("ok", status=200)
