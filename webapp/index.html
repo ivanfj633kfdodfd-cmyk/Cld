@@ -6,6 +6,40 @@
   <title>Claude</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
+/* ─── Biometric lock screen ───────────────────────────────────────────────── */
+#bioLock{
+  position:fixed;inset:0;z-index:9999;
+  background:#111;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:0;
+  transition:opacity .35s ease;
+}
+#bioLock.hidden{opacity:0;pointer-events:none;}
+.bio-logo{font-size:48px;color:#d4956a;margin-bottom:20px;}
+.bio-title{font-size:20px;font-weight:600;color:#e8e8e8;margin-bottom:6px;font-family:Georgia,serif;}
+.bio-sub{font-size:13px;color:#888;margin-bottom:40px;text-align:center;padding:0 32px;}
+.bio-btn{
+  width:80px;height:80px;border-radius:50%;
+  background:#242424;border:2px solid #3a3a3a;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:background .15s,border-color .15s,transform .1s;
+  margin-bottom:16px;
+}
+.bio-btn:hover{background:#2e2e2e;border-color:#555;}
+.bio-btn:active{transform:scale(.95);}
+.bio-btn svg{width:36px;height:36px;color:#d4956a;}
+.bio-hint{font-size:12px;color:#555;text-align:center;}
+.bio-skip{
+  margin-top:24px;font-size:12px;color:#444;
+  cursor:pointer;text-decoration:underline;text-underline-offset:2px;
+}
+.bio-skip:hover{color:#666;}
+.bio-status{
+  margin-top:16px;font-size:13px;height:18px;
+  color:#d4956a;text-align:center;
+}
+.bio-status.error{color:#e05c5c;}
 /* ─── Reset ──────────────────────────────────────────────────────────────── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
@@ -682,6 +716,28 @@ body{background:var(--bg);color:var(--text);display:flex;height:100dvh;}
 
 </main>
 
+<!-- ══ BIOMETRIC LOCK ════════════════════════════════════════════════════════ -->
+<div id="bioLock">
+  <div class="bio-logo">✳</div>
+  <div class="bio-title">Claude</div>
+  <div class="bio-sub">Confirm your identity to open the chat</div>
+  <div class="bio-btn" id="bioBtn" onclick="requestBio()">
+    <!-- Fingerprint SVG -->
+    <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+      <path d="M14 10.5C15.8 8.9 18 8 20.3 8c4.9 0 8.8 4 8.8 9v4"/>
+      <path d="M11 16c0-5.5 4.3-9 9-9"/>
+      <path d="M20 17v6a3 3 0 006 0v-4"/>
+      <path d="M14 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/>
+      <path d="M8 24c.5-3.5 2-6.5 4.5-8.5"/>
+      <path d="M20 23v5"/>
+      <path d="M17 32c.8.6 1.9 1 3 1s2.2-.4 3-1"/>
+    </svg>
+  </div>
+  <div class="bio-status" id="bioStatus"></div>
+  <div class="bio-hint">Touch the sensor to authenticate</div>
+  <div class="bio-skip" onclick="skipBio()">Skip biometrics</div>
+</div>
+
 <!-- ══ PAYWALL MODAL ══════════════════════════════════════════════════════════ -->
 <div class="pw-backdrop" id="pwBackdrop" onclick="handleBackdropClick(event)">
   <div class="pw-sheet" id="pwSheet">
@@ -764,6 +820,66 @@ if (tg) {
   tg.setHeaderColor?.('#111');
   tg.setBackgroundColor?.('#1a1a1a');
 }
+
+/* ── Biometric lock ───────────────────────────────────────────────────────── */
+const BM = tg?.BiometricManager;
+
+function unlockApp() {
+  const lock = document.getElementById('bioLock');
+  lock.classList.add('hidden');
+  setTimeout(() => { lock.style.display = 'none'; }, 360);
+}
+
+function setBioStatus(msg, isError = false) {
+  const el = document.getElementById('bioStatus');
+  el.textContent = msg;
+  el.className = 'bio-status' + (isError ? ' error' : '');
+}
+
+function requestBio() {
+  // No BiometricManager — skip straight to app
+  if (!BM) { unlockApp(); return; }
+
+  setBioStatus('Initializing…');
+
+  BM.init({ reason: 'Verify your identity to access Claude' }, () => {
+    if (!BM.isInited) { unlockApp(); return; }
+
+    if (!BM.isBiometricAvailable) {
+      // Device has no biometrics — skip
+      setBioStatus('Biometrics not available, skipping…');
+      setTimeout(unlockApp, 1000);
+      return;
+    }
+
+    BM.authenticate(
+      { reason: 'Open Claude chat' },
+      (isAuth) => {
+        if (isAuth) {
+          setBioStatus('Authenticated');
+          setTimeout(unlockApp, 300);
+        } else {
+          setBioStatus('Authentication failed. Try again.', true);
+        }
+      }
+    );
+  });
+}
+
+function skipBio() {
+  unlockApp();
+}
+
+// Auto-trigger biometrics on load
+window.addEventListener('DOMContentLoaded', () => {
+  if (!BM) {
+    // No Telegram BiometricManager available (desktop / old client) — unlock immediately
+    unlockApp();
+    return;
+  }
+  // Small delay so the page renders first
+  setTimeout(requestBio, 600);
+});
 
 /* ── User info ────────────────────────────────────────────────────────────── */
 (function initUser() {

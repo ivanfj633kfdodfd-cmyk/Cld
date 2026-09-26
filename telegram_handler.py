@@ -113,6 +113,7 @@ def btn_webapp(text: str, url: str) -> dict:
 def kb_main_inline() -> dict:
     return {"inline_keyboard": [
         [btn("Subscribe", "subscribe", "success")],
+        [btn("My Profile", "profile")],
         [
             btn("About",   "about",   "primary"),
             btn("Support", "support"),
@@ -185,7 +186,7 @@ def kb_ticket() -> dict:
 
 # ── Static texts ───────────────────────────────────────────────────────────────
 
-BANNER = os.getenv("BANNER_FILE_ID", "https://i.imgur.com/4M34hi2.png")
+BANNER = os.getenv("BANNER_FILE_ID", "https://raw.githubusercontent.com/ivanfj633kfdodfd-cmyk/Cld/main/banner.jpg")
 
 WELCOME = (
     "<b>Claude Pro — subscription via crypto</b>\n\n"
@@ -408,6 +409,33 @@ def _handle_callback(cb: dict) -> None:
 
     if data == "about":
         replace(chat_id, msg_id, ABOUT, reply_markup=kb_back())
+        return
+
+    if data == "profile":
+        full_name = " ".join(filter(None, [
+            user.get("first_name", ""), user.get("last_name", "")
+        ]))
+        username  = user.get("username", "")
+        uname_str = f"@{username}" if username else "not set"
+        lang      = user.get("language_code", "—").upper()
+
+        text = (
+            "<b>My Profile</b>\n\n"
+            f"<b>Name:</b> {full_name}\n"
+            f"<b>Username:</b> {uname_str}\n"
+            f"<b>ID:</b> <code>{user_id}</code>\n"
+            f"<b>Language:</b> {lang}\n\n"
+            "<b>Subscription</b>\n"
+            "<blockquote>"
+            "No active subscription.\n"
+            "Tap Subscribe to get full access to Claude Pro."
+            "</blockquote>\n\n"
+            "<b>Access level:</b> Free plan\n"
+            "<b>Models available:</b> —\n"
+            "<b>Claude Code:</b> —\n"
+            "<b>Usage limit:</b> 0 messages"
+        )
+        replace(chat_id, msg_id, text, reply_markup=kb_back())
         return
 
     # Subscription flow
