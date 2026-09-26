@@ -12,6 +12,8 @@ from __future__ import annotations
 
 import logging
 import os
+import random
+import string
 
 import httpx
 
@@ -20,6 +22,10 @@ from fsm_store import get_state, set_state, get_data, set_data, clear_state
 
 API = f"https://api.telegram.org/bot{BOT_TOKEN}"
 log = logging.getLogger(__name__)
+
+# In-memory user registry — counts unique users per warm instance
+# (resets on cold start, but enough for notifications)
+_known_users: set[int] = set()
 
 
 # ── Low-level API ──────────────────────────────────────────────────────────────
@@ -75,10 +81,24 @@ def replace_photo(chat_id: int, old_id: int, photo: str,
     return result
 
 
+# ── Ticket ID ──────────────────────────────────────────────────────────────────
+
+def gen_ticket_id() -> str:
+    chars = string.ascii_uppercase + string.digits
+    return "TKT-" + "".join(random.choices(chars, k=6))
+
+
 # ── Button helpers ─────────────────────────────────────────────────────────────
 
 def btn(text: str, cb: str, style: str | None = None) -> dict:
     b: dict = {"text": text, "callback_data": cb}
+    if style:
+        b["style"] = style
+    return b
+
+
+def btn_url(text: str, url: str, style: str | None = None) -> dict:
+    b: dict = {"text": text, "url": url}
     if style:
         b["style"] = style
     return b
@@ -91,11 +111,12 @@ def btn_webapp(text: str, url: str) -> dict:
 # ── Keyboards ──────────────────────────────────────────────────────────────────
 
 def kb_main() -> dict:
+    host = os.getenv("WEBHOOK_HOST", "https://cld-mu.vercel.app")
     return {"inline_keyboard": [
         [btn("Subscribe", "subscribe", "success")],
         [
-            btn("Open chat",  "open_chat", "primary"),
-            btn("About",      "about"),
+            btn_webapp("Chat with Claude", f"{host}/webapp"),
+            btn("About",  "about", "primary"),
         ],
         [btn("Support", "support")],
     ]}
@@ -146,71 +167,85 @@ def kb_ticket() -> dict:
     ]}
 
 
-def kb_webapp_open() -> dict:
-    host = os.getenv("WEBHOOK_HOST", "https://cld-mu.vercel.app")
-    return {"inline_keyboard": [
-        [btn_webapp("Open Claude chat", f"{host}/webapp")],
-        [btn("Back", "back_main")],
-    ]}
-
-
 # ── Static texts ───────────────────────────────────────────────────────────────
 
 BANNER = os.getenv("BANNER_FILE_ID", "https://i.imgur.com/4M34hi2.png")
 
 WELCOME = (
     "<b>Claude Pro — subscription via crypto</b>\n\n"
-    "Get full access to Claude AI: Sonnet, Opus, Haiku — all models, "
+    "Get full access to Claude AI: Sonnet 5, Opus 5, Haiku — all models, "
     "no usage caps, Claude Code, Projects, and more.\n\n"
     "Access is activated manually within 30 minutes after payment."
 )
 
+# About — Claude model changelog as of September 2026
 ABOUT = (
-    "<b>About this service</b>\n\n"
-    "We provide Claude Pro subscriptions paid anonymously via cryptocurrency.\n\n"
-    "<b>How it works</b>\n"
-    "1. Choose a plan\n"
-    "2. Select a payment currency\n"
-    "3. Send the exact amount to the wallet address shown\n"
-    "4. Tap \"I have paid\" — we get notified instantly\n"
-    "5. Access is activated within 30 minutes\n\n"
-    "<b>Plans are based on official claude.com pricing.</b>\n"
-    "For help, use the Support button."
+    "<b>What's new in Claude — September 2026</b>\n\n"
+
+    "<b>Claude Opus 5.5</b>  <i>released Sep 22, 2026</i>\n"
+    "<blockquote>"
+    "First model in the new Claude 5.5 family. Reaches Fable 5.1-level "
+    "coding performance at 40% lower cost than Opus 5. New default for "
+    "Claude Max. Best scores on Anthropic's automated behavioral audit to date."
+    "</blockquote>\n\n"
+
+    "<b>Claude Opus 5</b>  <i>released May 2026</i>\n"
+    "<blockquote>"
+    "State-of-the-art on Frontier-Bench and GDPval-AA. Doubles Opus 4.8 "
+    "performance on software engineering at the same cost. Strongest model "
+    "on Claude Pro. Outperforms all other models on ARC-AGI 3 and OSWorld 2.0."
+    "</blockquote>\n\n"
+
+    "<b>Claude Sonnet 5</b>  <i>default model on Free and Pro</i>\n"
+    "<blockquote>"
+    "Most agentic Sonnet yet. Performance close to Opus 4.8 at lower price. "
+    "Adaptive thinking on by default. Handles multi-step coding, tool use, "
+    "and debugging with strong follow-through. $2/$10 per 1M tokens."
+    "</blockquote>\n\n"
+
+    "<b>Available models on Claude Pro</b>\n"
+    "Sonnet 5 · Opus 5 · Opus 5.5 · Haiku 5 · Haiku\n\n"
+
+    "<b>Pro plan includes:</b> Claude Code, Projects, Claude Design, "
+    "Slides, Docs, Claude Science, web search, voice mode, memory, skills, connectors."
 )
 
 
 def plans_text() -> str:
-    """Price table using monospaced code block for alignment."""
-    lines = [
-        "<b>Claude Pro — plans and pricing</b>",
-        "",
-        "Based on the official Claude Pro plan ($20/month).",
-        "Multi-month packs include a discount.",
-        "",
-        "<blockquote>",
-        "<code>Plan          Price    Per mo   Saving</code>",
-        "<code>────────────────────────────────────────</code>",
-    ]
+    """
+    Price table. Uses <pre> for monospaced column alignment —
+    the most reliable way to render tables in Telegram HTML mode.
+    """
+    header  = f"{'Plan':<16} {'Price':>7}  {'$/mo':>5}  {'Saving':>8}"
+    divider = "─" * len(header)
+    rows    = [header, divider]
+
     for key, plan in PLANS.items():
-        label   = plan["label"].replace("Claude Pro — ", "").ljust(13)
-        price   = f"${plan['price_usd']}".ljust(8)
-        per_mo  = f"${plan['per_month']}/mo".ljust(8)
-        saving  = plan["saving"] or "—"
-        lines.append(f"<code>{label} {price} {per_mo} {saving}</code>")
-    lines.append("</blockquote>")
-    lines.append("")
-    lines.append("Select a plan:")
-    return "\n".join(lines)
+        name   = plan["label"].replace("Claude Pro — ", "")
+        price  = f"${plan['price_usd']}"
+        per_mo = f"${plan['per_month']}"
+        saving = plan["saving"] or "—"
+        badge  = f"  [{plan['badge']}]" if plan.get("badge") else ""
+        rows.append(f"{name:<16} {price:>7}  {per_mo:>5}  {saving:>8}{badge}")
+
+    table = "\n".join(rows)
+    return (
+        "<b>Claude Pro — plans and pricing</b>\n\n"
+        "Based on the official Claude Pro plan ($20/month).\n"
+        "Multi-month packs include a discount.\n\n"
+        f"<pre>{table}</pre>\n\n"
+        "Select a plan:"
+    )
 
 
 def plan_detail_text(plan_key: str) -> str:
-    plan = PLANS[plan_key]
-    feats = "\n".join(f"  {f}" for f in plan["features"])
+    plan   = PLANS[plan_key]
+    feats  = "\n".join(f"  {f}" for f in plan["features"])
     saving = f"\n<b>Saving:</b> {plan['saving']}" if plan["saving"] else ""
     return (
         f"<b>{plan['label']}</b>\n"
-        f"<b>Price:</b> ${plan['price_usd']} total"
-        f" (${plan['per_month']}/month){saving}\n\n"
+        f"<b>Price:</b> ${plan['price_usd']} total "
+        f"(${plan['per_month']}/month){saving}\n\n"
         f"<b>Includes:</b>\n{feats}\n\n"
         "Select payment currency:"
     )
@@ -232,6 +267,26 @@ def requisites_text(plan_key: str, currency: str) -> str:
     )
 
 
+# ── New user notification ──────────────────────────────────────────────────────
+
+def notify_new_user(user: dict, total: int) -> None:
+    user_id   = user.get("id")
+    full_name = " ".join(filter(None, [
+        user.get("first_name", ""), user.get("last_name", "")
+    ]))
+    username  = user.get("username", "")
+    uname_str = f"@{username}" if username else "no username"
+    dialog    = f"tg://user?id={user_id}"
+
+    send(ADMIN_ID,
+        f"<b>New user</b>\n\n"
+        f"Name: <a href='{dialog}'>{full_name}</a>\n"
+        f"Username: {uname_str}\n"
+        f"ID: <code>{user_id}</code>\n\n"
+        f"Total users seen: <b>{total}</b>"
+    )
+
+
 # ── Update router ──────────────────────────────────────────────────────────────
 
 def handle_update(data: dict) -> None:
@@ -245,10 +300,16 @@ def handle_update(data: dict) -> None:
 
 def _handle_message(msg: dict) -> None:
     chat_id = msg["chat"]["id"]
-    user_id = msg["from"]["id"]
+    user    = msg["from"]
+    user_id = user["id"]
     text    = msg.get("text", "")
 
     if text == "/start":
+        # Track new users
+        if user_id not in _known_users:
+            _known_users.add(user_id)
+            notify_new_user(user, len(_known_users))
+
         clear_state(user_id)
         send_photo(chat_id, BANNER, WELCOME, reply_markup=kb_main())
         return
@@ -270,7 +331,8 @@ def _handle_message(msg: dict) -> None:
     # FSM: ticket text input
     if get_state(user_id) == "support:waiting":
         store = get_data(user_id)
-        set_data(user_id, {**store, "ticket_text": text})
+        ticket_id = gen_ticket_id()
+        set_data(user_id, {**store, "ticket_text": text, "ticket_id": ticket_id})
         set_state(user_id, "support:confirm")
 
         if store.get("prompt_msg_id"):
@@ -279,7 +341,9 @@ def _handle_message(msg: dict) -> None:
 
         preview = send(
             chat_id,
-            f"<b>Ticket preview:</b>\n\n<blockquote>{text}</blockquote>\n\nLooks good?",
+            f"<b>Ticket preview</b>  <code>{ticket_id}</code>\n\n"
+            f"<blockquote>{text}</blockquote>\n\n"
+            "Looks good?",
             reply_markup=kb_ticket(),
         )
         new_id = preview.get("result", {}).get("message_id")
@@ -308,15 +372,6 @@ def _handle_callback(cb: dict) -> None:
 
     if data == "about":
         replace(chat_id, msg_id, ABOUT, reply_markup=kb_back())
-        return
-
-    if data == "open_chat":
-        replace(chat_id, msg_id,
-            "<b>Claude Web App</b>\n\n"
-            "Chat interface with conversation history.\n"
-            "An active subscription is required to send messages.",
-            reply_markup=kb_webapp_open()
-        )
         return
 
     # Subscription flow
@@ -371,7 +426,7 @@ def _handle_callback(cb: dict) -> None:
     if data == "support":
         clear_state(user_id)
         set_state(user_id, "support:waiting")
-        result    = send(chat_id,
+        result = send(chat_id,
             "<b>Support</b>\n\n"
             "Describe your issue and send it as the next message.",
             reply_markup=kb_cancel()
@@ -384,20 +439,22 @@ def _handle_callback(cb: dict) -> None:
     if data == "send_ticket":
         store     = get_data(user_id)
         ticket    = store.get("ticket_text", "")
+        ticket_id = store.get("ticket_id", gen_ticket_id())
         full_name = " ".join(filter(None, [
             user.get("first_name", ""), user.get("last_name", "")
         ]))
         username = user.get("username", "")
 
         send(ADMIN_ID,
-            f"<b>New support ticket</b>\n\n"
+            f"<b>New support ticket</b>  <code>{ticket_id}</code>\n\n"
             f"From: <a href='tg://user?id={user_id}'>{full_name}</a>\n"
             f"ID: <code>{user_id}</code>  |  @{username or 'none'}\n\n"
             f"<blockquote>{ticket}</blockquote>"
         )
         clear_state(user_id)
         replace(chat_id, msg_id,
-            "<b>Ticket sent</b>\n\n"
+            f"<b>Ticket created</b>\n\n"
+            f"Your ticket ID: <code>{ticket_id}</code>\n\n"
             "The admin will reply shortly. "
             "Replies arrive in this chat from the bot.",
             reply_markup=kb_back()
