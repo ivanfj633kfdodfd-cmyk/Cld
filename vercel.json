@@ -22,6 +22,10 @@
     {
       "src": "/webapp",
       "dest": "webapp/index.html"
+    },
+    {
+      "src": "/",
+      "dest": "bot.py"
     }
   ]
 }
