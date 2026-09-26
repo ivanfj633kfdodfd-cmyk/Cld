@@ -111,12 +111,13 @@ def btn_webapp(text: str, url: str) -> dict:
 # ── Keyboards ──────────────────────────────────────────────────────────────────
 
 def kb_main_inline() -> dict:
+    host = os.getenv("WEBHOOK_HOST", "https://cld-mu.vercel.app")
     return {"inline_keyboard": [
-        [btn("Subscribe", "subscribe", "success")],
+        [btn_webapp("Chat with Claude", f"{host}/webapp")],
         [btn("My Profile", "profile")],
         [
             btn("About",   "about",   "primary"),
-            btn("Support", "support"),
+            btn("Support", "support", "danger"),
         ],
     ]}
 
@@ -199,57 +200,57 @@ WELCOME = (
 ABOUT = (
     "<b>What's new in Claude — September 2026</b>\n\n"
 
-    "<b>Claude Opus 5.5</b>  <i>released Sep 22, 2026</i>\n"
+    "<b>Claude Opus 5.5</b>  <i>Sep 22, 2026</i>\n"
     "<blockquote>"
-    "First model in the new Claude 5.5 family. Reaches Fable 5.1-level "
+    "First model in the Claude 5.5 family. Reaches Fable 5.1-level "
     "coding performance at 40% lower cost than Opus 5. New default for "
-    "Claude Max. Best scores on Anthropic's automated behavioral audit to date."
+    "Claude Max. Best scores on Anthropic's behavioral audit to date."
     "</blockquote>\n\n"
 
-    "<b>Claude Opus 5</b>  <i>released May 2026</i>\n"
+    "<b>Claude Opus 5</b>  <i>May 2026</i>\n"
     "<blockquote>"
     "State-of-the-art on Frontier-Bench and GDPval-AA. Doubles Opus 4.8 "
-    "performance on software engineering at the same cost. Strongest model "
-    "on Claude Pro. Outperforms all other models on ARC-AGI 3 and OSWorld 2.0."
+    "performance on software engineering at the same cost. Best model on "
+    "Claude Pro. Outperforms all others on ARC-AGI 3 and OSWorld 2.0."
     "</blockquote>\n\n"
 
-    "<b>Claude Sonnet 5</b>  <i>default model on Free and Pro</i>\n"
+    "<b>Claude Sonnet 5</b>  <i>default on Free and Pro</i>\n"
     "<blockquote>"
-    "Most agentic Sonnet yet. Performance close to Opus 4.8 at lower price. "
-    "Adaptive thinking on by default. Handles multi-step coding, tool use, "
-    "and debugging with strong follow-through. $2/$10 per 1M tokens."
+    "Most agentic Sonnet yet. Close to Opus 4.8 performance at lower cost. "
+    "Adaptive thinking on by default. Strong multi-step coding and tool use."
     "</blockquote>\n\n"
 
-    "<b>Available models on Claude Pro</b>\n"
-    "Sonnet 5 · Opus 5 · Opus 5.5 · Haiku 5 · Haiku\n\n"
+    "<b>Plans available</b>\n"
+    "Claude Pro · Claude Max 5× · Claude Max 20×\n\n"
 
-    "<b>Pro plan includes:</b> Claude Code, Projects, Claude Design, "
-    "Slides, Docs, Claude Science, web search, voice mode, memory, skills, connectors."
+    "<a href=\"https://www.anthropic.com/news\">Learn more on Anthropic blog</a>"
 )
 
 
 def plans_text() -> str:
-    """
-    Price table. Uses <pre> for monospaced column alignment —
-    the most reliable way to render tables in Telegram HTML mode.
-    """
-    header  = f"{'Plan':<16} {'Price':>7}  {'$/mo':>5}  {'Saving':>8}"
-    divider = "─" * len(header)
+    header  = f"{'Plan':<16} {'Price':>9}  {'Includes'}"
+    divider = "─" * 48
     rows    = [header, divider]
 
-    for key, plan in PLANS.items():
-        name   = plan["label"].replace("Claude Pro — ", "")
-        price  = f"${plan['price_usd']}"
-        per_mo = f"${plan['per_month']}"
-        saving = plan["saving"] or "—"
-        badge  = f"  [{plan['badge']}]" if plan.get("badge") else ""
-        rows.append(f"{name:<16} {price:>7}  {per_mo:>5}  {saving:>8}{badge}")
+    descs = {
+        "pro":     "5× usage, Code, Projects, all models",
+        "max_5x":  "5× more than Pro, early access",
+        "max_20x": "20× more than Pro, highest limits",
+    }
 
-    table = "\n".join(rows)
+    for key, plan in PLANS.items():
+        name  = plan["label"]
+        price = f"${plan['price_usd']}/mo"
+        desc  = descs.get(key, "")
+        badge = f"  [{plan['badge']}]" if plan.get("badge") else ""
+        rows.append(f"{name:<16} {price:>9}")
+        rows.append(f"  {desc}{badge}")
+        rows.append("")
+
+    table = "\n".join(rows).rstrip()
     return (
-        "<b>Claude Pro — plans and pricing</b>\n\n"
-        "Based on the official Claude Pro plan ($20/month).\n"
-        "Multi-month packs include a discount.\n\n"
+        "<b>Claude — plans and pricing</b>\n\n"
+        "Official plans from claude.com/pricing.\n\n"
         f"<pre>{table}</pre>\n\n"
         "Select a plan:"
     )

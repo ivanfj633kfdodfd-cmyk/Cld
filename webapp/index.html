@@ -719,24 +719,41 @@ body{background:var(--bg);color:var(--text);display:flex;height:100dvh;}
 
 <!-- ══ BIOMETRIC LOCK ════════════════════════════════════════════════════════ -->
 <div id="bioLock">
-  <div class="bio-logo">✳</div>
-  <div class="bio-title">Claude</div>
-  <div class="bio-sub">Confirm your identity to open the chat</div>
-  <div class="bio-btn" id="bioBtn" onclick="requestBio()">
-    <!-- Fingerprint SVG -->
-    <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
-      <path d="M14 10.5C15.8 8.9 18 8 20.3 8c4.9 0 8.8 4 8.8 9v4"/>
-      <path d="M11 16c0-5.5 4.3-9 9-9"/>
-      <path d="M20 17v6a3 3 0 006 0v-4"/>
-      <path d="M14 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/>
-      <path d="M8 24c.5-3.5 2-6.5 4.5-8.5"/>
-      <path d="M20 23v5"/>
-      <path d="M17 32c.8.6 1.9 1 3 1s2.2-.4 3-1"/>
-    </svg>
+
+  <!-- State 1: "Enable biometrics?" prompt -->
+  <div id="bioPromptWrap" style="display:none;flex-direction:column;align-items:center;text-align:center;padding:0 32px;gap:0;">
+    <div class="bio-logo">✳</div>
+    <div class="bio-title">Protect your chats</div>
+    <div class="bio-sub" style="margin-bottom:32px;">
+      Enable biometric authentication to secure access to Claude chat on this device.
+    </div>
+    <button class="pw-cta" style="max-width:280px;margin-bottom:10px;" onclick="enableBioYes()">
+      Enable biometrics
+    </button>
+    <div class="bio-skip" onclick="enableBioNo()">Skip, open without protection</div>
   </div>
-  <div class="bio-status" id="bioStatus"></div>
-  <div class="bio-hint">Touch the sensor to authenticate</div>
-  <div class="bio-skip" onclick="skipBio()">Skip biometrics</div>
+
+  <!-- State 2: Scan screen -->
+  <div id="bioScanWrap" style="display:none;flex-direction:column;align-items:center;text-align:center;padding:0 32px;gap:0;">
+    <div class="bio-logo">✳</div>
+    <div class="bio-title">Claude</div>
+    <div class="bio-sub">Verify your identity to continue</div>
+    <div class="bio-btn" id="bioBtn" onclick="authenticate()">
+      <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+        <path d="M14 10.5C15.8 8.9 18 8 20.3 8c4.9 0 8.8 4 8.8 9v4"/>
+        <path d="M11 16c0-5.5 4.3-9 9-9"/>
+        <path d="M20 17v6a3 3 0 006 0v-4"/>
+        <path d="M14 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/>
+        <path d="M8 24c.5-3.5 2-6.5 4.5-8.5"/>
+        <path d="M20 23v5"/>
+        <path d="M17 32c.8.6 1.9 1 3 1s2.2-.4 3-1"/>
+      </svg>
+    </div>
+    <div class="bio-status" id="bioStatus"></div>
+    <div class="bio-hint">Touch the sensor or use Face ID</div>
+    <div class="bio-skip" onclick="skipBio()">Skip</div>
+  </div>
+
 </div>
 
 <!-- ══ PAYWALL MODAL ══════════════════════════════════════════════════════════ -->
@@ -768,8 +785,8 @@ body{background:var(--bg);color:var(--text);display:flex;height:100dvh;}
       <div class="pw-plans">
         <div class="pw-plan-card" onclick="selectPwPlan(this)">
           <div>
-            <div class="pw-plan-name">Claude Pro · 1 month</div>
-            <div class="pw-plan-desc">Full access, all models, Claude Code</div>
+            <div class="pw-plan-name">Claude Pro</div>
+            <div class="pw-plan-desc">5× usage · Code · Projects · all models</div>
           </div>
           <div class="pw-plan-price">
             <div class="price">$20</div>
@@ -779,27 +796,27 @@ body{background:var(--bg);color:var(--text);display:flex;height:100dvh;}
         <div class="pw-plan-card highlight" onclick="selectPwPlan(this)">
           <div>
             <div class="pw-plan-name">
-              Claude Pro · 6 months
+              Claude Max 5×
               <span class="pw-badge">Popular</span>
             </div>
-            <div class="pw-plan-desc">$17/mo · save $18 vs monthly</div>
+            <div class="pw-plan-desc">5× more than Pro · early access</div>
           </div>
           <div class="pw-plan-price">
-            <div class="price">$102</div>
-            <div class="per">total</div>
+            <div class="price">$100</div>
+            <div class="per">/ month</div>
           </div>
         </div>
         <div class="pw-plan-card" onclick="selectPwPlan(this)">
           <div>
             <div class="pw-plan-name">
-              Claude Pro · 12 months
-              <span class="pw-badge">Best value</span>
+              Claude Max 20×
+              <span class="pw-badge">Power</span>
             </div>
-            <div class="pw-plan-desc">$17/mo · save $40 vs monthly</div>
+            <div class="pw-plan-desc">20× more than Pro · highest limits</div>
           </div>
           <div class="pw-plan-price">
             <div class="price">$200</div>
-            <div class="per">total</div>
+            <div class="per">/ month</div>
           </div>
         </div>
       </div>
@@ -824,6 +841,7 @@ if (tg) {
 
 /* ── Biometric lock ───────────────────────────────────────────────────────── */
 const BM = tg?.BiometricManager;
+let bioEnabled = false;
 
 function unlockApp() {
   const lock = document.getElementById('bioLock');
@@ -837,49 +855,82 @@ function setBioStatus(msg, isError = false) {
   el.className = 'bio-status' + (isError ? ' error' : '');
 }
 
+function showBioPrompt() {
+  // Show "enable biometrics?" UI instead of directly scanning
+  document.getElementById('bioPromptWrap').style.display = 'flex';
+  document.getElementById('bioScanWrap').style.display   = 'none';
+}
+
+function showBioScan() {
+  document.getElementById('bioPromptWrap').style.display = 'none';
+  document.getElementById('bioScanWrap').style.display   = 'flex';
+}
+
+function enableBioYes() {
+  showBioScan();
+  requestBio();
+}
+
+function enableBioNo() {
+  unlockApp();
+}
+
 function requestBio() {
-  // No BiometricManager — skip straight to app
   if (!BM) { unlockApp(); return; }
 
-  setBioStatus('Initializing…');
+  setBioStatus('');
 
-  BM.init({ reason: 'Verify your identity to access Claude' }, () => {
+  BM.init({ reason: 'Verify your identity to open Claude' }, () => {
     if (!BM.isInited) { unlockApp(); return; }
 
     if (!BM.isBiometricAvailable) {
-      // Device has no biometrics — skip
-      setBioStatus('Biometrics not available, skipping…');
-      setTimeout(unlockApp, 1000);
+      setBioStatus('Biometrics not available on this device.', true);
+      setTimeout(unlockApp, 1200);
       return;
     }
 
-    BM.authenticate(
-      { reason: 'Open Claude chat' },
-      (isAuth) => {
-        if (isAuth) {
-          setBioStatus('Authenticated');
-          setTimeout(unlockApp, 300);
-        } else {
-          setBioStatus('Authentication failed. Try again.', true);
+    // Request permission first (required by Telegram before authenticate)
+    BM.requestAccess(
+      { reason: 'Protect your Claude chat with biometrics' },
+      (granted) => {
+        if (!granted) {
+          setBioStatus('Permission denied. Skipping.', true);
+          setTimeout(unlockApp, 1000);
+          return;
         }
+        authenticate();
       }
     );
   });
 }
 
-function skipBio() {
-  unlockApp();
+function authenticate() {
+  if (!BM) { unlockApp(); return; }
+  setBioStatus('Touch the sensor…');
+
+  BM.authenticate(
+    { reason: 'Open Claude chat' },
+    (isAuth) => {
+      if (isAuth) {
+        setBioStatus('Authenticated');
+        setTimeout(unlockApp, 300);
+      } else {
+        setBioStatus('Not recognized. Try again.', true);
+      }
+    }
+  );
 }
 
-// Auto-trigger biometrics on load
+function skipBio() { unlockApp(); }
+
 window.addEventListener('DOMContentLoaded', () => {
-  if (!BM) {
-    // No Telegram BiometricManager available (desktop / old client) — unlock immediately
+  if (!BM || !tg) {
+    // No Telegram biometrics support — skip lock
     unlockApp();
     return;
   }
-  // Small delay so the page renders first
-  setTimeout(requestBio, 600);
+  // Show "enable biometrics?" prompt
+  setTimeout(showBioPrompt, 400);
 });
 
 /* ── User info ────────────────────────────────────────────────────────────── */

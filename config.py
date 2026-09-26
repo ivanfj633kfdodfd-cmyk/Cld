@@ -55,79 +55,56 @@ WALLETS: dict[str, dict] = {
     },
 }
 
-# ── Plans (based on claude.com/pricing) ───────────────────────────────────────
+# ── Plans (official claude.com/pricing) ───────────────────────────────────────
 #
-# Claude Pro  — $20/month
-# We offer 1, 3, 6, 12 month packs at the same per-month rate.
-# Savings are applied as a discount on multi-month packs.
+# Claude Pro   — $20/month
+# Claude Max 5x  — $100/month
+# Claude Max 20x — $200/month
 #
 PLANS: dict[str, dict] = {
-    "pro_1m": {
-        "label":     "Claude Pro — 1 month",
+    "pro": {
+        "label":     "Claude Pro",
         "price_usd": 20,
         "per_month": 20,
         "saving":    None,
         "badge":     None,
         "features": [
             "Everything in Free",
-            "More usage limits",
+            "5× more usage than Free",
             "Claude Code included",
             "Claude Design, Slides, Docs",
             "Claude Science",
             "Projects",
-            "All Claude models (Sonnet, Opus, Haiku)",
-            "Priority access at high traffic",
+            "All models: Sonnet 5, Opus 5, Haiku",
+            "Priority access at peak times",
         ],
     },
-    "pro_3m": {
-        "label":     "Claude Pro — 3 months",
-        "price_usd": 54,
-        "per_month": 18,
-        "saving":    "Save $6",
+    "max_5x": {
+        "label":     "Claude Max 5×",
+        "price_usd": 100,
+        "per_month": 100,
+        "saving":    None,
         "badge":     "Popular",
         "features": [
-            "Everything in Free",
-            "More usage limits",
-            "Claude Code included",
-            "Claude Design, Slides, Docs",
-            "Claude Science",
-            "Projects",
-            "All Claude models (Sonnet, Opus, Haiku)",
-            "Priority access at high traffic",
+            "Everything in Pro",
+            "5× more usage than Pro",
+            "Higher output limits",
+            "Early access to new features",
+            "Priority access at all times",
         ],
     },
-    "pro_6m": {
-        "label":     "Claude Pro — 6 months",
-        "price_usd": 102,
-        "per_month": 17,
-        "saving":    "Save $18",
-        "badge":     "Best value",
-        "features": [
-            "Everything in Free",
-            "More usage limits",
-            "Claude Code included",
-            "Claude Design, Slides, Docs",
-            "Claude Science",
-            "Projects",
-            "All Claude models (Sonnet, Opus, Haiku)",
-            "Priority access at high traffic",
-        ],
-    },
-    "pro_12m": {
-        "label":     "Claude Pro — 12 months",
+    "max_20x": {
+        "label":     "Claude Max 20×",
         "price_usd": 200,
-        "per_month": 17,
-        "saving":    "Save $40",
-        "badge":     "Annual",
+        "per_month": 200,
+        "saving":    None,
+        "badge":     "Power users",
         "features": [
-            "Everything in Free",
-            "More usage limits",
-            "Claude Code included",
-            "Claude Design, Slides, Docs",
-            "Claude Science",
-            "Projects",
-            "All Claude models (Sonnet, Opus, Haiku)",
-            "Priority access at high traffic",
+            "Everything in Pro",
+            "20× more usage than Pro",
+            "Highest output limits",
+            "Early access to new features",
+            "Priority access at all times",
         ],
     },
 }
