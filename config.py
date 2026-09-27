@@ -14,43 +14,50 @@ WEBHOOK_PATH: str = os.getenv("WEBHOOK_PATH", "/webhook")
 WEBHOOK_URL:  str = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
 
 # ── Crypto wallets ─────────────────────────────────────────────────────────────
-_PLACEHOLDER = "Address not configured yet"
+# One EVM address covers ETH / USDT ERC-20 / USDC ERC-20 / BNB BSC
+# One TRON address covers TRX / USDT TRC-20
+_NA = "Address not configured yet"
+_EVM  = os.getenv("WALLET_EVM",  _NA)
+_TRX  = os.getenv("WALLET_TRX",  _NA)
+_BTC  = os.getenv("WALLET_BTC",  _NA)
+_SOL  = os.getenv("WALLET_SOL",  _NA)
+_TON  = os.getenv("WALLET_TON",  _NA)
 
 WALLETS: dict[str, dict] = {
     "USDT TRC-20": {
-        "address": os.getenv("WALLET_USDT_TRC20", _PLACEHOLDER),
+        "address": _TRX,
         "network": "TRON (TRC-20)",
     },
     "USDT ERC-20": {
-        "address": os.getenv("WALLET_USDT_ERC20", _PLACEHOLDER),
+        "address": _EVM,
         "network": "Ethereum (ERC-20)",
     },
     "USDC ERC-20": {
-        "address": os.getenv("WALLET_USDC_ERC20", _PLACEHOLDER),
+        "address": _EVM,
         "network": "Ethereum (ERC-20)",
     },
     "TRX": {
-        "address": os.getenv("WALLET_TRON", _PLACEHOLDER),
+        "address": _TRX,
         "network": "TRON",
     },
-    "BTC": {
-        "address": os.getenv("WALLET_BTC", _PLACEHOLDER),
-        "network": "Bitcoin",
-    },
     "ETH": {
-        "address": os.getenv("WALLET_ETH", _PLACEHOLDER),
+        "address": _EVM,
         "network": "Ethereum",
     },
     "BNB": {
-        "address": os.getenv("WALLET_BNB", _PLACEHOLDER),
+        "address": _EVM,
         "network": "BNB Smart Chain (BEP-20)",
     },
+    "BTC": {
+        "address": _BTC,
+        "network": "Bitcoin",
+    },
     "SOL": {
-        "address": os.getenv("WALLET_SOL", _PLACEHOLDER),
+        "address": _SOL,
         "network": "Solana",
     },
     "TON": {
-        "address": os.getenv("WALLET_TON", _PLACEHOLDER),
+        "address": _TON,
         "network": "TON",
     },
 }
