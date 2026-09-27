@@ -104,8 +104,11 @@ def btn_url(text: str, url: str, style: str | None = None) -> dict:
     return b
 
 
-def btn_webapp(text: str, url: str) -> dict:
-    return {"text": text, "web_app": {"url": url}}
+def btn_webapp(text: str, url: str, style: str | None = None) -> dict:
+    b: dict = {"text": text, "web_app": {"url": url}}
+    if style:
+        b["style"] = style
+    return b
 
 
 # ── Keyboards ──────────────────────────────────────────────────────────────────
@@ -113,10 +116,11 @@ def btn_webapp(text: str, url: str) -> dict:
 def kb_main_inline() -> dict:
     host = os.getenv("WEBHOOK_HOST", "https://cld-mu.vercel.app")
     return {"inline_keyboard": [
-        [btn_webapp("Chat with Claude", f"{host}/webapp")],
-        [btn("My Profile", "profile")],
+        [btn_webapp("Chat with Claude", f"{host}/webapp", "success")],
+        [{"text": "My Profile", "callback_data": "profile",
+          "thumbnail_url": "https://raw.githubusercontent.com/ivanfj633kfdodfd-cmyk/Cld/main/Claude_3-7_illustration.png"}],
         [
-            btn("About",   "about",   "primary"),
+            btn("About",   "about",   "danger"),
             btn("Support", "support", "danger"),
         ],
     ]}
@@ -139,7 +143,7 @@ def kb_plans() -> dict:
         price = f"${plan['price_usd']}"
         badge = f"  {plan['badge']}" if plan.get("badge") else ""
         rows.append([btn(f"{label} — {price}{badge}", f"plan:{key}", "primary")])
-    rows.append([btn("Back", "back_main")])
+    rows.append([btn("Back to menu", "back_main", "primary")])
     return {"inline_keyboard": rows}
 
 
@@ -157,12 +161,12 @@ def kb_paid(plan_key: str) -> dict:
     return {"inline_keyboard": [
         [btn("I have paid", f"paid:{plan_key}", "success")],
         [btn("Change currency", f"plan:{plan_key}")],
-        [btn("Main menu", "back_main")],
+        [btn("Back to menu", "back_main", "primary")],
     ]}
 
 
 def kb_back() -> dict:
-    return {"inline_keyboard": [[btn("Main menu", "back_main")]]}
+    return {"inline_keyboard": [[btn("Back to menu", "back_main", "primary")]]}
 
 
 def kb_cancel() -> dict:
@@ -333,6 +337,28 @@ def _handle_message(msg: dict) -> None:
         if param == "subscribe":
             send_photo(chat_id, BANNER, WELCOME, reply_markup=kb_main_inline())
             send(chat_id, plans_text(), reply_markup=kb_plans())
+            return
+
+        if param == "profile":
+            send_photo(chat_id, BANNER, WELCOME, reply_markup=kb_main_inline())
+            # Immediately show profile
+            full_name = " ".join(filter(None, [
+                user.get("first_name", ""), user.get("last_name", "")
+            ]))
+            username  = user.get("username", "")
+            uname_str = f"@{username}" if username else "not set"
+            lang      = user.get("language_code", "—").upper()
+            send(chat_id,
+                f"<b>My Profile</b>\n\n"
+                f"<b>Name:</b> {full_name}\n"
+                f"<b>Username:</b> {uname_str}\n"
+                f"<b>ID:</b> <code>{user_id}</code>\n"
+                f"<b>Language:</b> {lang}\n\n"
+                "<b>Subscription:</b>\n"
+                "<blockquote>No active subscription.\n"
+                "Use Chat with Claude to subscribe.</blockquote>",
+                reply_markup=kb_back()
+            )
             return
 
         # Default start — remove any old reply keyboard, send welcome
