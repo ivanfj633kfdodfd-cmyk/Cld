@@ -533,11 +533,11 @@ def _handle_callback(cb: dict) -> None:
     if data.startswith("order_refresh:"):
         plan_key = data.split(":", 1)[1]
         plan     = PLANS[plan_key]
-        import datetime
-        updated_at = datetime.datetime.utcnow().strftime("%d.%m.%Y %H:%M UTC")
-        username   = user.get("username", "")
-        uname_str  = f"@{username}" if username else "—"
-        # Retrieve order_id from message text if possible, else generate stub
+        import datetime, time
+        username  = user.get("username", "")
+        uname_str = f"@{username}" if username else "—"
+
+        # Retrieve order_id from message text
         existing_text = msg.get("text") or msg.get("caption") or ""
         order_id = "—"
         for line in existing_text.splitlines():
@@ -545,27 +545,43 @@ def _handle_callback(cb: dict) -> None:
                 order_id = line.split("Order ID:")[-1].strip()
                 break
 
-        order_text = (
-            "<b>Order status</b>\n\n"
-            f"<b>Order ID:</b> <code>{order_id}</code>\n"
-            f"<b>Plan:</b> {plan['label']}\n"
-            f"<b>Amount:</b> ${plan['price_usd']}\n"
-            f"<b>Account:</b> {uname_str}  <code>{user_id}</code>\n\n"
-            f"<b>Status:</b>  ⏳ Processing\n\n"
-            f"<i>Last updated: {updated_at}</i>"
-        )
         kb_order = {"inline_keyboard": [
             [btn("Refresh status", f"order_refresh:{plan_key}", "success")],
             [btn("Back to menu",   "back_main", "primary")],
         ]}
+
+        # Step 1: show "refreshing" immediately
         api("editMessageText",
             chat_id=chat_id,
             message_id=msg_id,
-            text=order_text,
+            text=(
+                f"<b>Order status</b>\n\n"
+                f"<b>Order ID:</b> <code>{order_id}</code>\n\n"
+                f"♻️ <i>Refreshing...</i>"
+            ),
             parse_mode="HTML",
             reply_markup=kb_order
         )
-        answer_cb(cb_id, "Updated", show_alert=False)
+        answer_cb(cb_id, show_alert=False)
+
+        # Step 2: wait 1 second, then show real status
+        time.sleep(1)
+        updated_at = datetime.datetime.utcnow().strftime("%d.%m.%Y %H:%M UTC")
+        api("editMessageText",
+            chat_id=chat_id,
+            message_id=msg_id,
+            text=(
+                "<b>Order status</b>\n\n"
+                f"<b>Order ID:</b> <code>{order_id}</code>\n"
+                f"<b>Plan:</b> {plan['label']}\n"
+                f"<b>Amount:</b> ${plan['price_usd']}\n"
+                f"<b>Account:</b> {uname_str}  <code>{user_id}</code>\n\n"
+                f"<b>Status:</b>  ⏳ Processing\n\n"
+                f"<i>Last updated: {updated_at}</i>"
+            ),
+            parse_mode="HTML",
+            reply_markup=kb_order
+        )
         return
 
     # Support
