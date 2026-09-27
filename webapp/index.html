@@ -474,7 +474,7 @@ body{
     <button class="pin-key" onclick="pinKey('0')">0</button>
     <!-- ICON NEEDED: backspace/delete — 22px, filter:invert(.6) -->
     <button class="pin-key del" onclick="pinDel()">
-      <span style="font-size:20px;color:#666;">⌫</span>
+      <img src="https://www.svgrepo.com/show/532932/delete-left.svg" style="width:22px;height:22px;filter:invert(.6);" alt="del">
     </button>
   </div>
   <div class="pin-skip" onclick="pinSkip()">Skip, open without PIN</div>
@@ -488,7 +488,7 @@ body{
   </div>
   <!-- ICON NEEDED: inbox / chat history / message box — 24px, stroke style -->
   <button class="topbar-chats" onclick="openChats()" title="My chats">
-    <span id="iconChats" style="font-size:20px;color:#888;">☰</span>
+    <img src="https://www.svgrepo.com/show/510841/bar-top.svg" style="width:22px;height:22px;filter:invert(.5);" alt="chats">
   </button>
 </div>
 
@@ -529,11 +529,11 @@ body{
       <div class="tb-right">
         <!-- ICON NEEDED: microphone — 18px stroke, filter:invert(.6) -->
         <button class="tb-voice" id="btnVoice">
-          <span id="iconMic" style="font-size:18px;color:#666;">⏺</span>
+          <img src="https://www.svgrepo.com/show/379309/voice.svg" style="width:18px;height:18px;filter:invert(.5);" alt="mic">
         </button>
         <!-- ICON NEEDED: arrow-up — 16px, white on orange circle -->
         <button class="send-btn" id="sendBtn" onclick="handleSend()" disabled>
-          <span id="iconSend" style="font-size:16px;color:#fff;line-height:1;">↑</span>
+          <img src="https://www.svgrepo.com/show/521484/arrow-up-1.svg" style="width:16px;height:16px;filter:brightness(0) invert(1);" alt="send">
         </button>
       </div>
     </div>
@@ -564,32 +564,31 @@ body{
   <div class="mm-sep"></div>
 
   <!-- Pro-only models -->
-  <!-- ICON NEEDED: lock — 18px, filter:invert(.4) — used 3 times below -->
   <div class="mm-item locked" onclick="openPaywall();closeModel();">
     <div class="mm-info">
       <div class="mm-name">Claude Opus 5.5</div>
       <div class="mm-sub">Most powerful · Sep 2026</div>
     </div>
-    <span id="iconLock1" style="font-size:16px;color:#444;">🔒</span>
+    <img class="mm-lock" src="https://www.svgrepo.com/show/491295/padlock-outlined.svg" alt="locked" style="filter:invert(.4);">
   </div>
   <div class="mm-item locked" onclick="openPaywall();closeModel();">
     <div class="mm-info">
       <div class="mm-name">Claude Opus 5</div>
       <div class="mm-sub">Deep reasoning · agentic</div>
     </div>
-    <span style="font-size:16px;color:#444;">🔒</span>
+    <img class="mm-lock" src="https://www.svgrepo.com/show/491295/padlock-outlined.svg" alt="locked" style="filter:invert(.4);">
   </div>
   <div class="mm-item locked" onclick="openPaywall();closeModel();">
     <div class="mm-info">
       <div class="mm-name">Claude Sonnet 4.5</div>
       <div class="mm-sub">Previous generation</div>
     </div>
-    <span style="font-size:16px;color:#444;">🔒</span>
+    <img class="mm-lock" src="https://www.svgrepo.com/show/491295/padlock-outlined.svg" alt="locked" style="filter:invert(.4);">
   </div>
 </div>
 
 <!-- ══ ATTACH SHEET ═══════════════════════════════════════════════════════════ -->
-<!-- ICONS NEEDED for attach sheet items (22px, filter:invert(.6), stroke style):
+  <!-- ICON NEEDED for attach sheet items (22px, filter:invert(.6), stroke style):
      1. paperclip / attach
      2. camera / screenshot
      3. folder / project
@@ -600,34 +599,34 @@ body{
 <div class="attach-sheet" id="attachSheet">
   <div class="sheet-handle"></div>
   <div class="as-item" onclick="closeAttach();openPaywall();">
-    <span class="as-icon" style="font-size:18px;color:#666;">📎</span>
+    <img class="as-icon" src="https://www.svgrepo.com/show/533425/paperclip.svg" alt="" style="filter:invert(.6);">
     Add files or photos
     <span class="as-shortcut">Ctrl+U</span>
   </div>
   <div class="as-item" onclick="closeAttach();openPaywall();">
-    <span class="as-icon" style="font-size:18px;color:#666;">📷</span>
+    <img class="as-icon" src="https://www.svgrepo.com/show/533059/camera.svg" alt="" style="filter:invert(.6);">
     Take a screenshot
   </div>
   <div class="as-sep"></div>
   <div class="as-item" onclick="closeAttach();openPaywall();">
-    <span class="as-icon" style="font-size:18px;color:#666;">📁</span>
+    <img class="as-icon" src="https://www.svgrepo.com/show/532810/folder.svg" alt="" style="filter:invert(.6);">
     Add to project
     <span class="as-arrow">›</span>
   </div>
   <div class="as-sep"></div>
   <div class="as-item" onclick="closeAttach();openPaywall();">
-    <span class="as-icon" style="font-size:18px;color:#666;">⊞</span>
+    <img class="as-icon" src="https://www.svgrepo.com/show/374449/skill-entity.svg" alt="" style="filter:invert(.6);">
     Skills
     <span class="as-arrow">›</span>
   </div>
   <div class="as-item" onclick="closeAttach();openPaywall();">
-    <span class="as-icon" style="font-size:18px;color:#666;">🔗</span>
+    <img class="as-icon" src="https://www.svgrepo.com/show/150736/chain-links.svg" alt="" style="filter:invert(.6);">
     Connectors
     <span class="as-arrow">›</span>
   </div>
   <div class="as-sep"></div>
   <div class="as-item" onclick="closeAttach();">
-    <span class="as-icon" style="font-size:18px;color:#666;">🌐</span>
+    <img class="as-icon" src="https://www.svgrepo.com/show/521261/web.svg" alt="" style="filter:invert(.6);">
     Web search
     <span class="as-check">✓</span>
   </div>
