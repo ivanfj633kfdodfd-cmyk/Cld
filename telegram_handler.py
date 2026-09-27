@@ -117,8 +117,7 @@ def kb_main_inline() -> dict:
     host = os.getenv("WEBHOOK_HOST", "https://cld-mu.vercel.app")
     return {"inline_keyboard": [
         [btn_webapp("Chat with Claude", f"{host}/webapp", "success")],
-        [{"text": "My Profile", "callback_data": "profile",
-          "thumbnail_url": "https://raw.githubusercontent.com/ivanfj633kfdodfd-cmyk/Cld/main/Claude_3-7_illustration.png"}],
+        [btn("My Profile", "profile", "primary")],
         [
             btn("About",   "about",   "danger"),
             btn("Support", "support", "danger"),
@@ -443,7 +442,9 @@ def _handle_callback(cb: dict) -> None:
         uname_str = f"@{username}" if username else "not set"
         lang      = user.get("language_code", "—").upper()
 
-        text = (
+        PROFILE_IMG = "https://raw.githubusercontent.com/ivanfj633kfdodfd-cmyk/Cld/main/Claude_3-7_illustration.png"
+
+        caption = (
             "<b>My Profile</b>\n\n"
             f"<b>Name:</b> {full_name}\n"
             f"<b>Username:</b> {uname_str}\n"
@@ -452,14 +453,20 @@ def _handle_callback(cb: dict) -> None:
             "<b>Subscription</b>\n"
             "<blockquote>"
             "No active subscription.\n"
-            "Tap Subscribe to get full access to Claude Pro."
+            "Subscribe to get full access to Claude Pro."
             "</blockquote>\n\n"
             "<b>Access level:</b> Free plan\n"
-            "<b>Models available:</b> —\n"
+            "<b>Models available:</b> Sonnet 5, Haiku 5\n"
             "<b>Claude Code:</b> —\n"
             "<b>Usage limit:</b> 0 messages"
         )
-        replace(chat_id, msg_id, text, reply_markup=kb_back())
+        kb_profile = {"inline_keyboard": [
+            [btn("Subscribe", "subscribe", "success")],
+            [btn("Back to menu", "back_main", "primary")],
+        ]}
+        # Send photo with profile, then delete old message
+        send_photo(chat_id, PROFILE_IMG, caption, reply_markup=kb_profile)
+        delete_msg(chat_id, msg_id)
         return
 
     # Subscription flow

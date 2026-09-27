@@ -81,16 +81,31 @@ body{
   font-size:12px;font-weight:600;color:#fff;
 }
 .topbar-avatar img{width:100%;height:100%;object-fit:cover;}
-.topbar-name{font-size:13px;font-weight:500;color:#ccc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;}
-.topbar-upgrade{
-  background:#1e1e1e;border-radius:20px;
-  padding:5px 14px;
-  font-size:12.5px;color:#888;white-space:nowrap;flex-shrink:0;
+.topbar-name{font-size:13px;font-weight:500;color:#ccc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;}
+.topbar-chats{
+  width:34px;height:34px;border-radius:50%;
+  background:none;border:none;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:#888;flex-shrink:0;
+  -webkit-tap-highlight-color:transparent;
 }
-.topbar-upgrade a{color:#d4956a;font-weight:600;text-decoration:none;}
+.topbar-chats:active{background:#1e1e1e;}
 
 /* ── UPGRADE BANNER ── */
 .upgrade-banner{display:none;}
+
+/* ── UPGRADE PILL — centered above input ── */
+.input-upgrade{
+  display:flex;align-items:center;justify-content:center;
+  gap:6px;
+  background:#1e1e1e;
+  border-radius:20px;
+  padding:6px 16px;
+  margin:0 auto 8px;
+  width:fit-content;
+  font-size:12.5px;color:#888;
+}
+.input-upgrade a{color:#d4956a;font-weight:600;text-decoration:none;}
 
 /* ── MESSAGES ── */
 .messages{
@@ -457,8 +472,9 @@ body{
     <button class="pin-key" onclick="pinKey('9')">9 <span class="letters">WXYZ</span></button>
     <button class="pin-key" style="background:transparent;border:none;" disabled></button>
     <button class="pin-key" onclick="pinKey('0')">0</button>
+    <!-- ICON NEEDED: backspace/delete — 22px, filter:invert(.6) -->
     <button class="pin-key del" onclick="pinDel()">
-      <img src="https://www.svgrepo.com/show/488066/delete.svg" style="width:22px;height:22px;filter:invert(.6);" alt="del">
+      <span style="font-size:20px;color:#666;">⌫</span>
     </button>
   </div>
   <div class="pin-skip" onclick="pinSkip()">Skip, open without PIN</div>
@@ -470,9 +486,10 @@ body{
     <div class="topbar-avatar" id="topAvatar"></div>
     <span class="topbar-name" id="topName">Loading…</span>
   </div>
-  <div class="topbar-upgrade">
-    Free plan · <a href="#" onclick="openPaywall();return false;">Upgrade</a>
-  </div>
+  <!-- ICON NEEDED: inbox / chat history / message box — 24px, stroke style -->
+  <button class="topbar-chats" onclick="openChats()" title="My chats">
+    <span id="iconChats" style="font-size:20px;color:#888;">☰</span>
+  </button>
 </div>
 
 <!-- ══ MESSAGES ══════════════════════════════════════════════════════════════ -->
@@ -491,8 +508,7 @@ body{
 <!-- ══ INPUT ═════════════════════════════════════════════════════════════════ -->
 <div class="input-area">
   <div class="input-upgrade">
-    <span>Get more with Claude Pro</span>
-    <a href="#" onclick="openPaywall();return false;">Upgrade to Pro</a>
+    Free plan · <a href="#" onclick="openPaywall();return false;">Upgrade to Pro</a>
   </div>
   <div class="input-box">
     <div class="input-row">
@@ -511,11 +527,13 @@ body{
         </button>
       </div>
       <div class="tb-right">
-        <button class="tb-voice">
-          <img src="https://www.svgrepo.com/show/532093/microphone.svg" alt="mic" style="width:18px;height:18px;filter:invert(.6);">
+        <!-- ICON NEEDED: microphone — 18px stroke, filter:invert(.6) -->
+        <button class="tb-voice" id="btnVoice">
+          <span id="iconMic" style="font-size:18px;color:#666;">⏺</span>
         </button>
+        <!-- ICON NEEDED: arrow-up — 16px, white on orange circle -->
         <button class="send-btn" id="sendBtn" onclick="handleSend()" disabled>
-          <img src="https://www.svgrepo.com/show/535234/arrow-up.svg" alt="send">
+          <span id="iconSend" style="font-size:16px;color:#fff;line-height:1;">↑</span>
         </button>
       </div>
     </div>
@@ -546,62 +564,70 @@ body{
   <div class="mm-sep"></div>
 
   <!-- Pro-only models -->
+  <!-- ICON NEEDED: lock — 18px, filter:invert(.4) — used 3 times below -->
   <div class="mm-item locked" onclick="openPaywall();closeModel();">
     <div class="mm-info">
       <div class="mm-name">Claude Opus 5.5</div>
       <div class="mm-sub">Most powerful · Sep 2026</div>
     </div>
-    <img class="mm-lock" src="https://www.svgrepo.com/show/532037/lock.svg" alt="locked" style="filter:invert(.4);">
+    <span id="iconLock1" style="font-size:16px;color:#444;">🔒</span>
   </div>
   <div class="mm-item locked" onclick="openPaywall();closeModel();">
     <div class="mm-info">
       <div class="mm-name">Claude Opus 5</div>
       <div class="mm-sub">Deep reasoning · agentic</div>
     </div>
-    <img class="mm-lock" src="https://www.svgrepo.com/show/532037/lock.svg" alt="locked" style="filter:invert(.4);">
+    <span style="font-size:16px;color:#444;">🔒</span>
   </div>
   <div class="mm-item locked" onclick="openPaywall();closeModel();">
     <div class="mm-info">
       <div class="mm-name">Claude Sonnet 4.5</div>
       <div class="mm-sub">Previous generation</div>
     </div>
-    <img class="mm-lock" src="https://www.svgrepo.com/show/532037/lock.svg" alt="locked" style="filter:invert(.4);">
+    <span style="font-size:16px;color:#444;">🔒</span>
   </div>
 </div>
 
 <!-- ══ ATTACH SHEET ═══════════════════════════════════════════════════════════ -->
+<!-- ICONS NEEDED for attach sheet items (22px, filter:invert(.6), stroke style):
+     1. paperclip / attach
+     2. camera / screenshot
+     3. folder / project
+     4. grid/component / skills
+     5. link/chain / connectors
+     6. globe / web search (has checkmark ✓) -->
 <div class="sheet-backdrop" id="attachBackdrop" onclick="closeAttach()"></div>
 <div class="attach-sheet" id="attachSheet">
   <div class="sheet-handle"></div>
   <div class="as-item" onclick="closeAttach();openPaywall();">
-    <img class="as-icon" src="https://www.svgrepo.com/show/532381/paperclip.svg" alt="" style="filter:invert(.6);">
+    <span class="as-icon" style="font-size:18px;color:#666;">📎</span>
     Add files or photos
     <span class="as-shortcut">Ctrl+U</span>
   </div>
   <div class="as-item" onclick="closeAttach();openPaywall();">
-    <img class="as-icon" src="https://www.svgrepo.com/show/532230/camera.svg" alt="" style="filter:invert(.6);">
+    <span class="as-icon" style="font-size:18px;color:#666;">📷</span>
     Take a screenshot
   </div>
   <div class="as-sep"></div>
   <div class="as-item" onclick="closeAttach();openPaywall();">
-    <img class="as-icon" src="https://www.svgrepo.com/show/532185/folder.svg" alt="" style="filter:invert(.6);">
+    <span class="as-icon" style="font-size:18px;color:#666;">📁</span>
     Add to project
     <span class="as-arrow">›</span>
   </div>
   <div class="as-sep"></div>
   <div class="as-item" onclick="closeAttach();openPaywall();">
-    <img class="as-icon" src="https://www.svgrepo.com/show/532167/component.svg" alt="" style="filter:invert(.6);">
+    <span class="as-icon" style="font-size:18px;color:#666;">⊞</span>
     Skills
     <span class="as-arrow">›</span>
   </div>
   <div class="as-item" onclick="closeAttach();openPaywall();">
-    <img class="as-icon" src="https://www.svgrepo.com/show/532077/link.svg" alt="" style="filter:invert(.6);">
+    <span class="as-icon" style="font-size:18px;color:#666;">🔗</span>
     Connectors
     <span class="as-arrow">›</span>
   </div>
   <div class="as-sep"></div>
   <div class="as-item" onclick="closeAttach();">
-    <img class="as-icon" src="https://www.svgrepo.com/show/532256/globe.svg" alt="" style="filter:invert(.6);">
+    <span class="as-icon" style="font-size:18px;color:#666;">🌐</span>
     Web search
     <span class="as-check">✓</span>
   </div>
@@ -726,12 +752,16 @@ if(tg){ tg.ready(); tg.expand(); tg.setHeaderColor?.('#111'); tg.setBackgroundCo
 })();
 
 function goProfile(){
-  // Close webapp and open bot — bot shows profile via /start or deep link
   const botUsername = window.BOT_USERNAME || 'CIaudeRobot';
   if(tg){
     tg.openTelegramLink(`https://t.me/${botUsername}?start=profile`);
     setTimeout(()=>tg.close(), 300);
   }
+}
+
+function openChats(){
+  // Shows paywall — chat history requires subscription
+  openPaywall();
 }
 
 /* ══════════════════════ PIN ══════════════════════════════════════════════ */
