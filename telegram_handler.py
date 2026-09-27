@@ -240,13 +240,13 @@ def plans_text() -> str:
 
 def plan_detail_text(plan_key: str) -> str:
     plan   = PLANS[plan_key]
-    feats  = "\n".join(f"  {f}" for f in plan["features"])
+    feats  = "\n".join(f"  ✓ {f}" for f in plan["features"])
     saving = f"\n<b>Saving:</b> {plan['saving']}" if plan["saving"] else ""
     return (
         f"<b>{plan['label']}</b>\n"
-        f"<b>Price:</b> ${plan['price_usd']} total "
-        f"(${plan['per_month']}/month){saving}\n\n"
-        f"<b>Includes:</b>\n{feats}\n\n"
+        f"<b>Price:</b> ${plan['price_usd']}/month{saving}\n\n"
+        f"<b>Includes:</b>\n"
+        f"<blockquote>{feats}</blockquote>\n\n"
         "Select payment currency:"
     )
 
@@ -507,14 +507,56 @@ def _handle_callback(cb: dict) -> None:
             "Verify the transaction and grant access."
         )
         answer_cb(cb_id, "Notification sent to admin.", show_alert=True)
-        replace(chat_id, msg_id,
-            "<b>Request received</b>\n\n"
-            f"Plan: <b>{plan['label']}</b>\n\n"
-            "The admin has been notified. "
-            "Access will be activated within <b>30 minutes</b>.\n\n"
-            "If it takes longer, please open a support ticket.",
-            reply_markup=kb_back()
+
+        # Store order info for refresh button
+        import datetime
+        updated_at = datetime.datetime.utcnow().strftime("%d.%m.%Y %H:%M UTC")
+        uname_str  = f"@{username}" if username else "—"
+
+        order_text = (
+            "<b>Order status</b>\n\n"
+            f"<b>Plan:</b> {plan['label']}\n"
+            f"<b>Amount:</b> ${plan['price_usd']}\n"
+            f"<b>Account:</b> {uname_str}  <code>{user_id}</code>\n\n"
+            f"<b>Status:</b>  ⏳ Processing\n\n"
+            f"<i>Last updated: {updated_at}</i>"
         )
+        kb_order = {"inline_keyboard": [
+            [btn("Refresh status", f"order_refresh:{plan_key}", "primary")],
+            [btn("Back to menu",   "back_main", "primary")],
+        ]}
+        replace(chat_id, msg_id, order_text, reply_markup=kb_order)
+        return
+
+    if data.startswith("order_refresh:"):
+        plan_key = data.split(":", 1)[1]
+        plan     = PLANS[plan_key]
+        import datetime
+        updated_at = datetime.datetime.utcnow().strftime("%d.%m.%Y %H:%M UTC")
+        username   = user.get("username", "")
+        uname_str  = f"@{username}" if username else "—"
+
+        order_text = (
+            "<b>Order status</b>\n\n"
+            f"<b>Plan:</b> {plan['label']}\n"
+            f"<b>Amount:</b> ${plan['price_usd']}\n"
+            f"<b>Account:</b> {uname_str}  <code>{user_id}</code>\n\n"
+            f"<b>Status:</b>  ⏳ Processing\n\n"
+            f"<i>Last updated: {updated_at}</i>"
+        )
+        kb_order = {"inline_keyboard": [
+            [btn("Refresh status", f"order_refresh:{plan_key}", "primary")],
+            [btn("Back to menu",   "back_main", "primary")],
+        ]}
+        # Edit message in place — no flicker
+        api("editMessageText",
+            chat_id=chat_id,
+            message_id=msg_id,
+            text=order_text,
+            parse_mode="HTML",
+            reply_markup=kb_order
+        )
+        answer_cb(cb_id, "Updated", show_alert=False)
         return
 
     # Support
