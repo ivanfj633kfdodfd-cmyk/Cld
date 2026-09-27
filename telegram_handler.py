@@ -512,9 +512,11 @@ def _handle_callback(cb: dict) -> None:
         import datetime
         updated_at = datetime.datetime.utcnow().strftime("%d.%m.%Y %H:%M UTC")
         uname_str  = f"@{username}" if username else "—"
+        order_id   = gen_ticket_id()
 
         order_text = (
             "<b>Order status</b>\n\n"
+            f"<b>Order ID:</b> <code>{order_id}</code>\n"
             f"<b>Plan:</b> {plan['label']}\n"
             f"<b>Amount:</b> ${plan['price_usd']}\n"
             f"<b>Account:</b> {uname_str}  <code>{user_id}</code>\n\n"
@@ -522,7 +524,7 @@ def _handle_callback(cb: dict) -> None:
             f"<i>Last updated: {updated_at}</i>"
         )
         kb_order = {"inline_keyboard": [
-            [btn("Refresh status", f"order_refresh:{plan_key}", "primary")],
+            [btn("Refresh status", f"order_refresh:{plan_key}", "success")],
             [btn("Back to menu",   "back_main", "primary")],
         ]}
         replace(chat_id, msg_id, order_text, reply_markup=kb_order)
@@ -535,9 +537,17 @@ def _handle_callback(cb: dict) -> None:
         updated_at = datetime.datetime.utcnow().strftime("%d.%m.%Y %H:%M UTC")
         username   = user.get("username", "")
         uname_str  = f"@{username}" if username else "—"
+        # Retrieve order_id from message text if possible, else generate stub
+        existing_text = msg.get("text") or msg.get("caption") or ""
+        order_id = "—"
+        for line in existing_text.splitlines():
+            if "Order ID:" in line:
+                order_id = line.split("Order ID:")[-1].strip()
+                break
 
         order_text = (
             "<b>Order status</b>\n\n"
+            f"<b>Order ID:</b> <code>{order_id}</code>\n"
             f"<b>Plan:</b> {plan['label']}\n"
             f"<b>Amount:</b> ${plan['price_usd']}\n"
             f"<b>Account:</b> {uname_str}  <code>{user_id}</code>\n\n"
@@ -545,10 +555,9 @@ def _handle_callback(cb: dict) -> None:
             f"<i>Last updated: {updated_at}</i>"
         )
         kb_order = {"inline_keyboard": [
-            [btn("Refresh status", f"order_refresh:{plan_key}", "primary")],
+            [btn("Refresh status", f"order_refresh:{plan_key}", "success")],
             [btn("Back to menu",   "back_main", "primary")],
         ]}
-        # Edit message in place — no flicker
         api("editMessageText",
             chat_id=chat_id,
             message_id=msg_id,
