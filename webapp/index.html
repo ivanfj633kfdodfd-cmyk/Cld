@@ -1,1122 +1,915 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-  <title>Claude</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="config.js"></script>
-  <style>
-/* ─── Biometric lock screen ───────────────────────────────────────────────── */
-#bioLock{
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"/>
+<title>Claude</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="config.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{height:100%;height:100dvh;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  background:#111;color:#e8e8e8;
+  height:100%;height:100dvh;
+  display:flex;flex-direction:column;
+  overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ── PIN LOCK ── */
+#pinLock{
   position:fixed;inset:0;z-index:9999;
   background:#111;
   display:flex;flex-direction:column;
   align-items:center;justify-content:center;
-  gap:0;
-  transition:opacity .35s ease;
+  padding:32px 24px;
+  transition:opacity .3s;
 }
-#bioLock.hidden{opacity:0;pointer-events:none;}
-.bio-logo{font-size:48px;color:#d4956a;margin-bottom:20px;}
-.bio-title{font-size:20px;font-weight:600;color:#e8e8e8;margin-bottom:6px;font-family:Georgia,serif;}
-.bio-sub{font-size:13px;color:#888;margin-bottom:40px;text-align:center;padding:0 32px;}
-.bio-btn{
-  width:80px;height:80px;border-radius:50%;
-  background:#242424;border:2px solid #3a3a3a;
-  display:flex;align-items:center;justify-content:center;
-  cursor:pointer;transition:background .15s,border-color .15s,transform .1s;
-  margin-bottom:16px;
-}
-.bio-btn:hover{background:#2e2e2e;border-color:#555;}
-.bio-btn:active{transform:scale(.95);}
-.bio-btn svg{width:36px;height:36px;color:#d4956a;}
-.bio-hint{font-size:12px;color:#555;text-align:center;}
-.bio-skip{
-  margin-top:24px;font-size:12px;color:#444;
-  cursor:pointer;text-decoration:underline;text-underline-offset:2px;
-}
-.bio-skip:hover{color:#666;}
-.bio-status{
-  margin-top:16px;font-size:13px;height:18px;
-  color:#d4956a;text-align:center;
-}
-.bio-status.error{color:#e05c5c;}
-/* ─── Reset ──────────────────────────────────────────────────────────────── */
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
+#pinLock.out{opacity:0;pointer-events:none;}
 
-/* ─── Tokens ─────────────────────────────────────────────────────────────── */
-:root{
-  --bg:          #1a1a1a;
-  --sidebar-bg:  #111;
-  --surface:     #242424;
-  --surface2:    #2c2c2c;
-  --border:      #2e2e2e;
-  --border2:     #3a3a3a;
-  --text:        #e8e8e8;
-  --text2:       #aaa;
-  --text3:       #666;
-  --accent:      #d4956a;   /* Claude orange */
-  --accent-h:    #bf7f55;
-  --accent-rgb:  212,149,106;
-  --green:       #4caf50;
-  --radius:      10px;
-  --sidebar-w:   220px;
-}
+.pin-logo{width:56px;height:56px;margin-bottom:20px;}
+.pin-title{font-size:22px;font-weight:700;color:#e8e8e8;margin-bottom:6px;font-family:Georgia,serif;text-align:center;}
+.pin-sub{font-size:14px;color:#888;text-align:center;margin-bottom:32px;line-height:1.5;}
 
-/* ─── Layout ─────────────────────────────────────────────────────────────── */
-body{background:var(--bg);color:var(--text);display:flex;height:100dvh;}
+/* PIN dots */
+.pin-dots{display:flex;gap:16px;margin-bottom:32px;}
+.pin-dot{
+  width:14px;height:14px;border-radius:50%;
+  border:2px solid #444;background:transparent;
+  transition:background .15s,border-color .15s;
+}
+.pin-dot.filled{background:#d4956a;border-color:#d4956a;}
 
-/* ─── Sidebar ────────────────────────────────────────────────────────────── */
-.sidebar{
-  width:var(--sidebar-w);flex-shrink:0;
-  background:var(--sidebar-bg);
-  border-right:1px solid var(--border);
-  display:flex;flex-direction:column;
-  overflow:hidden;
+/* PIN grid */
+.pin-grid{display:grid;grid-template-columns:repeat(3,72px);gap:12px;margin-bottom:20px;}
+.pin-key{
+  height:72px;border-radius:50%;
+  background:#1e1e1e;border:none;
+  font-size:24px;font-weight:400;color:#e8e8e8;
+  cursor:pointer;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  transition:background .1s;
+  -webkit-tap-highlight-color:transparent;
+  gap:2px;
 }
-.sb-top{
-  padding:14px 12px 10px;
-  border-bottom:1px solid var(--border);
-  display:flex;align-items:center;justify-content:space-between;
-}
-.sb-brand{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600;}
-.sb-logo{
-  width:26px;height:26px;border-radius:50%;
-  background:var(--accent);
-  display:flex;align-items:center;justify-content:center;
-  font-size:13px;font-weight:800;color:#fff;flex-shrink:0;
-}
-.sb-new{
-  width:28px;height:28px;border-radius:7px;
-  background:none;border:1px solid var(--border2);
-  color:var(--text2);font-size:18px;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-  transition:background .15s;
-}
-.sb-new:hover{background:var(--surface2);}
+.pin-key:active{background:#2e2e2e;}
+.pin-key .letters{font-size:9px;color:#666;letter-spacing:.08em;}
+.pin-key.del{font-size:20px;background:transparent;}
+.pin-key.del:active{background:#1e1e1e;}
+.pin-status{font-size:13px;color:#e05c5c;height:20px;text-align:center;margin-bottom:8px;}
+.pin-skip{font-size:12px;color:#555;cursor:pointer;text-decoration:underline;text-underline-offset:3px;margin-top:4px;}
+.pin-skip:hover{color:#888;}
 
-.sb-section{
-  padding:8px 12px 4px;
-  font-size:10px;font-weight:600;
-  text-transform:uppercase;letter-spacing:.06em;
-  color:var(--text3);
-}
-.sb-list{flex:1;overflow-y:auto;padding:0 6px 8px;scrollbar-width:none;}
-.sb-list::-webkit-scrollbar{display:none;}
-.sb-item{
-  padding:7px 8px;border-radius:7px;
-  font-size:12.5px;color:var(--text3);
-  display:flex;align-items:center;gap:7px;
-  cursor:default;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
-.sb-item.locked::before{
-  content:"";width:12px;height:12px;flex-shrink:0;
-  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='3' y='7' width='10' height='8' rx='2' fill='%23555'/%3E%3Cpath d='M5 7V5a3 3 0 016 0v2' stroke='%23555' stroke-width='1.5' fill='none'/%3E%3C/svg%3E") center/contain no-repeat;
-}
-
-.sb-bottom{
-  padding:10px 12px 14px;
-  border-top:1px solid var(--border);
-}
-.sb-user{display:flex;align-items:center;gap:9px;}
-.sb-avatar{
-  width:30px;height:30px;border-radius:50%;
-  background:var(--accent);
-  display:flex;align-items:center;justify-content:center;
-  font-size:12px;font-weight:700;color:#fff;
-  flex-shrink:0;overflow:hidden;
-}
-.sb-avatar img{width:100%;height:100%;object-fit:cover;}
-.sb-userinfo{overflow:hidden;flex:1;}
-.sb-username{font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.sb-plan{
-  font-size:11px;color:var(--text3);
-  display:flex;align-items:center;gap:5px;
-}
-.sb-plan .upgrade{
-  color:var(--accent);cursor:pointer;text-decoration:none;font-weight:500;
-}
-.sb-plan .upgrade:hover{text-decoration:underline;}
-
-/* ─── Main ───────────────────────────────────────────────────────────────── */
-.main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative;}
-
-/* ─── Topbar ─────────────────────────────────────────────────────────────── */
+/* ── TOPBAR ── */
 .topbar{
-  height:48px;flex-shrink:0;
-  border-bottom:1px solid var(--border);
-  display:flex;align-items:center;justify-content:center;
-  position:relative;padding:0 16px;
-}
-.topbar-plan{
-  font-size:13px;color:var(--text2);
-  display:flex;align-items:center;gap:8px;
-}
-.topbar-plan .dot{color:var(--text3);}
-.topbar-plan .upgrade-link{
-  color:var(--accent);font-weight:500;cursor:pointer;
-  text-decoration:none;
-}
-.topbar-plan .upgrade-link:hover{text-decoration:underline;}
-
-/* ─── Messages area ──────────────────────────────────────────────────────── */
-.messages{
-  flex:1;overflow-y:auto;
-  scroll-behavior:smooth;
-  scrollbar-width:thin;
-  scrollbar-color:var(--border2) transparent;
-}
-.messages::-webkit-scrollbar{width:4px;}
-.messages::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
-
-.msg-wrap{max-width:680px;margin:0 auto;padding:28px 20px;display:flex;flex-direction:column;gap:28px;}
-
-/* Welcome screen */
-.welcome{
-  display:flex;flex-direction:column;align-items:center;
-  padding:60px 20px 20px;gap:16px;
+  flex-shrink:0;
+  padding:10px 16px 8px;
   text-align:center;
+  font-size:13px;color:#888;
+  border-bottom:1px solid #1e1e1e;
 }
-.welcome-logo{
-  font-size:42px;line-height:1;
-  color:var(--accent);
+.topbar a{color:#d4956a;text-decoration:none;font-weight:500;}
+
+/* ── UPGRADE BANNER ── */
+.upgrade-banner{
+  flex-shrink:0;
+  display:flex;align-items:center;justify-content:space-between;
+  background:#1a1a1a;
+  padding:8px 16px;
+  font-size:12.5px;color:#888;
+  border-bottom:1px solid #1e1e1e;
 }
-.welcome-title{
-  font-size:clamp(22px,4vw,30px);font-weight:600;
-  color:var(--text);
-  font-family:Georgia,"Times New Roman",serif;
-  letter-spacing:-.01em;
+.upgrade-banner a{color:#d4956a;font-weight:600;text-decoration:none;}
+
+/* ── MESSAGES ── */
+.messages{
+  flex:1;overflow-y:auto;overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+  scroll-behavior:smooth;
+}
+.msg-wrap{
+  max-width:640px;margin:0 auto;
+  padding:0 16px 16px;
+  display:flex;flex-direction:column;
+  min-height:100%;
 }
 
-/* Message rows */
-.msg{display:flex;gap:10px;}
-.msg.user{flex-direction:row-reverse;}
-.msg-icon{
-  width:30px;height:30px;border-radius:50%;flex-shrink:0;
-  overflow:hidden;margin-top:2px;
+/* Welcome */
+.welcome{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  text-align:center;padding:40px 0;
 }
-.msg-icon.ai-icon{
-  background:var(--accent);
-  display:flex;align-items:center;justify-content:center;
-  font-size:14px;font-weight:800;color:#fff;
+.welcome-logo{width:52px;height:52px;margin-bottom:16px;}
+.welcome-title{
+  font-size:clamp(20px,5vw,26px);
+  font-weight:700;color:#e8e8e8;
+  font-family:Georgia,"Times New Roman",serif;
+  line-height:1.2;
 }
-.msg-icon.user-icon{background:var(--surface2);}
-.msg-icon.user-icon img{width:100%;height:100%;object-fit:cover;}
-.msg-icon.user-icon .initials{
-  width:100%;height:100%;
-  display:flex;align-items:center;justify-content:center;
-  font-size:12px;font-weight:600;color:var(--text2);
+
+/* Thinking indicator */
+.thinking{
+  display:flex;align-items:center;gap:10px;
+  padding:12px 0 4px;
+  font-size:13px;color:#888;
 }
-.msg-body{max-width:calc(100% - 40px);}
-.msg-name{font-size:12px;color:var(--text3);margin-bottom:4px;}
+.thinking-dots{display:flex;gap:5px;align-items:center;}
+.thinking-dots span{
+  width:7px;height:7px;border-radius:50%;
+  background:#d4956a;opacity:.3;
+  animation:pulse 1.4s ease-in-out infinite;
+}
+.thinking-dots span:nth-child(2){animation-delay:.2s;}
+.thinking-dots span:nth-child(3){animation-delay:.4s;}
+@keyframes pulse{0%,80%,100%{opacity:.3;}40%{opacity:1;}}
+.thinking-label{font-size:12px;color:#888;font-style:italic;}
+
+/* Messages */
+.msg{display:flex;flex-direction:column;gap:2px;margin-bottom:20px;}
+.msg.user{align-items:flex-end;}
+.msg.ai{align-items:flex-start;}
+.msg-name{font-size:11px;color:#555;margin-bottom:4px;padding:0 4px;}
 .msg-bubble{
-  font-size:14px;line-height:1.65;
-  padding:10px 14px;border-radius:var(--radius);
-  background:var(--surface);
+  max-width:85%;
+  font-size:14.5px;line-height:1.6;
+  padding:10px 14px;border-radius:18px;
   word-break:break-word;white-space:pre-wrap;
 }
-.msg.ai .msg-bubble{background:transparent;padding-left:0;}
+.msg.user .msg-bubble{background:#d4956a;color:#fff;border-bottom-right-radius:4px;}
+.msg.ai .msg-bubble{background:#1e1e1e;color:#e8e8e8;border-bottom-left-radius:4px;}
 
-/* ─── Input area ─────────────────────────────────────────────────────────── */
-.input-wrap{
-  flex-shrink:0;padding:12px 16px 16px;
-  border-top:1px solid var(--border);
+/* ── INPUT AREA ── */
+.input-area{
+  flex-shrink:0;
+  background:#111;
+  padding:0 12px 8px;
+  padding-bottom:calc(8px + env(safe-area-inset-bottom));
 }
+
+/* Upgrade strip above input */
+.input-upgrade{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:6px 4px;
+  font-size:12px;color:#666;
+}
+.input-upgrade a{color:#d4956a;font-weight:500;text-decoration:none;}
+
+/* Input box */
 .input-box{
-  max-width:680px;margin:0 auto;
-  background:var(--surface);
-  border:1px solid var(--border2);
-  border-radius:14px;
-  transition:border-color .15s;
+  background:#1e1e1e;
+  border-radius:20px;
+  overflow:visible;
   position:relative;
 }
-.input-box:focus-within{border-color:#4a4a4a;}
 
-.input-top{display:flex;align-items:flex-end;gap:0;}
-.input-ta{
-  flex:1;background:transparent;border:none;outline:none;
-  color:var(--text);font-family:inherit;font-size:14px;
-  line-height:1.55;resize:none;
-  padding:13px 14px 0;
-  min-height:46px;max-height:200px;
-}
-.input-ta::placeholder{color:var(--text3);}
-
-.input-footer{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:6px 10px 8px;
+/* Textarea row */
+.input-row{
+  display:flex;align-items:flex-end;
+  padding:10px 12px 6px;
   gap:8px;
 }
-.input-left{display:flex;align-items:center;gap:6px;}
+.input-ta{
+  flex:1;
+  background:transparent;border:none;outline:none;
+  color:#e8e8e8;font-family:inherit;
+  font-size:15px;line-height:1.4;
+  resize:none;
+  min-height:24px;max-height:120px;
+  overflow-y:auto;
+  padding:0;
+  display:block;
+  /* single line until user types newline */
+  white-space:pre-wrap;
+  word-break:break-word;
+}
+.input-ta::placeholder{color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
-/* Attach button */
-.attach-btn{
-  width:30px;height:30px;border-radius:8px;
-  background:none;border:none;cursor:pointer;
+/* Bottom toolbar */
+.input-toolbar{
+  display:flex;align-items:center;
+  padding:4px 10px 10px;
+  gap:8px;
+}
+.tb-left{display:flex;align-items:center;gap:6px;flex:1;}
+.tb-right{display:flex;align-items:center;gap:8px;}
+
+/* + button */
+.tb-plus{
+  width:32px;height:32px;border-radius:50%;
+  background:#2a2a2a;border:none;color:#aaa;
+  font-size:20px;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
-  color:var(--text2);transition:background .15s,color .15s;
-  position:relative;
+  flex-shrink:0;
+  -webkit-tap-highlight-color:transparent;
 }
-.attach-btn:hover{background:var(--surface2);color:var(--text);}
-.attach-btn svg{width:16px;height:16px;flex-shrink:0;}
+.tb-plus:active{background:#333;}
 
-/* Mode tabs */
-.mode-tabs{display:flex;gap:2px;}
-.mode-tab{
-  padding:4px 10px;border-radius:6px;
-  font-size:12px;font-weight:500;
-  background:none;border:none;cursor:pointer;
-  color:var(--text2);transition:background .15s,color .15s;
-}
-.mode-tab.active{background:var(--surface2);color:var(--text);}
-.mode-tab:hover:not(.active){color:var(--text);}
-
-/* Right controls */
-.input-right{display:flex;align-items:center;gap:6px;}
-.model-btn{
+/* Model pill */
+.model-pill{
   display:flex;align-items:center;gap:5px;
-  background:none;border:none;cursor:pointer;
-  font-size:12px;color:var(--text2);padding:4px 8px;
-  border-radius:6px;transition:background .15s;
+  background:#2a2a2a;border:none;
+  border-radius:16px;padding:5px 10px;
+  font-size:13px;color:#ccc;cursor:pointer;
   white-space:nowrap;
+  -webkit-tap-highlight-color:transparent;
 }
-.model-btn:hover{background:var(--surface2);}
-.model-btn .chevron{
-  width:12px;height:12px;
-  transition:transform .15s;
-}
-.model-btn.open .chevron{transform:rotate(180deg);}
+.model-pill:active{background:#333;}
+.model-pill svg{width:12px;height:12px;flex-shrink:0;color:#888;transition:transform .15s;}
+.model-pill.open svg{transform:rotate(180deg);}
 
+/* Voice & waveform */
+.tb-voice,.tb-wave{
+  width:36px;height:36px;border-radius:50%;
+  background:#2a2a2a;border:none;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:#aaa;
+  -webkit-tap-highlight-color:transparent;
+}
+.tb-voice:active,.tb-wave:active{background:#333;}
+.tb-voice img,.tb-wave img{width:18px;height:18px;opacity:.7;}
+
+/* Send button */
 .send-btn{
-  width:32px;height:32px;border-radius:8px;
-  background:var(--accent);border:none;cursor:pointer;
+  width:36px;height:36px;border-radius:50%;
+  background:#d4956a;border:none;
   display:flex;align-items:center;justify-content:center;
-  transition:background .15s,opacity .15s;flex-shrink:0;
+  cursor:pointer;
+  transition:background .15s,opacity .15s;
+  flex-shrink:0;
+  -webkit-tap-highlight-color:transparent;
 }
-.send-btn:hover{background:var(--accent-h);}
-.send-btn:disabled{opacity:.35;cursor:default;}
-.send-btn svg{width:14px;height:14px;color:#fff;}
+.send-btn:disabled{background:#333;opacity:.6;}
+.send-btn:not(:disabled):active{background:#bf7f55;}
+.send-btn img{width:16px;height:16px;filter:brightness(0) invert(1);}
 
-/* ─── Attach dropdown ────────────────────────────────────────────────────── */
-.attach-menu{
-  position:absolute;
-  bottom:calc(100% + 8px);
-  left:0;
-  width:260px;
-  background:#2a2a2a;
-  border:1px solid var(--border2);
-  border-radius:12px;
-  padding:6px 0;
-  box-shadow:0 8px 30px rgba(0,0,0,.5);
-  z-index:200;
-  display:none;
-  animation:fadeUp .12s ease;
-}
-.attach-menu.open{display:block;}
-@keyframes fadeUp{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
-.am-item{
-  display:flex;align-items:center;gap:12px;
-  padding:9px 14px;
-  font-size:13.5px;color:var(--text);
-  cursor:pointer;transition:background .1s;
-  user-select:none;
-}
-.am-item:hover{background:rgba(255,255,255,.06);}
-.am-item .am-icon{
-  width:20px;height:20px;flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;
-  color:var(--text2);
-}
-.am-item .am-shortcut{margin-left:auto;font-size:11px;color:var(--text3);}
-.am-item .am-arrow{margin-left:auto;color:var(--text3);font-size:13px;}
-.am-sep{height:1px;background:var(--border);margin:5px 0;}
-.am-check{margin-left:auto;color:var(--accent);font-size:14px;}
-
-/* ─── Model dropdown ─────────────────────────────────────────────────────── */
-.model-menu{
-  position:absolute;
-  bottom:calc(100% + 8px);
-  right:44px;
-  width:220px;
-  background:#2a2a2a;
-  border:1px solid var(--border2);
-  border-radius:12px;
-  padding:6px 0;
-  box-shadow:0 8px 30px rgba(0,0,0,.5);
-  z-index:200;
-  display:none;
-  animation:fadeUp .12s ease;
-}
-.model-menu.open{display:block;}
-.mm-item{
-  display:flex;align-items:center;gap:10px;
-  padding:8px 14px;font-size:13px;
-  cursor:pointer;transition:background .1s;color:var(--text);
-}
-.mm-item:hover{background:rgba(255,255,255,.06);}
-.mm-item.selected{background:rgba(var(--accent-rgb),.12);}
-.mm-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
-.mm-item-info{flex:1;}
-.mm-name{font-size:13px;font-weight:500;}
-.mm-sub{font-size:11px;color:var(--text3);}
-.mm-check{color:var(--accent);font-size:14px;}
-
-/* ─── Usage bar ──────────────────────────────────────────────────────────── */
-.usage-bar-wrap{
-  max-width:680px;margin:0 auto;
-  padding:0 20px 10px;
-}
-.usage-bar-row{
-  display:flex;align-items:center;justify-content:space-between;
-  font-size:11px;color:var(--text3);margin-bottom:4px;
-}
-.usage-bar-bg{
-  height:3px;background:var(--border2);border-radius:2px;overflow:hidden;
-}
-.usage-bar-fill{
-  height:100%;border-radius:2px;
-  background:var(--accent);
-  width:100%;
-  transition:width .3s ease;
-}
-
-/* ─── Disclaimer ─────────────────────────────────────────────────────────── */
 .disclaimer{
-  text-align:center;font-size:11px;color:var(--text3);
-  padding:4px 20px 0;max-width:680px;margin:0 auto;
+  text-align:center;font-size:11px;color:#444;
+  padding:4px 0 2px;
 }
 
-/* ─── Paywall modal ──────────────────────────────────────────────────────── */
+/* ── MODEL SHEET ── */
+.sheet-backdrop{
+  position:fixed;inset:0;z-index:400;
+  background:rgba(0,0,0,.5);
+  opacity:0;pointer-events:none;
+  transition:opacity .2s;
+}
+.sheet-backdrop.open{opacity:1;pointer-events:all;}
+
+.model-sheet{
+  position:fixed;bottom:0;left:0;right:0;z-index:401;
+  background:#1a1a1a;
+  border-radius:20px 20px 0 0;
+  padding:0 0 calc(20px + env(safe-area-inset-bottom));
+  transform:translateY(100%);
+  transition:transform .25s cubic-bezier(.4,0,.2,1);
+  max-height:70vh;overflow-y:auto;
+}
+.model-sheet.open{transform:translateY(0);}
+.sheet-handle{width:36px;height:4px;background:#333;border-radius:2px;margin:12px auto 4px;}
+.sheet-title{font-size:13px;color:#666;text-align:center;padding:4px 0 12px;}
+
+.mm-item{
+  display:flex;align-items:center;
+  padding:14px 20px;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  transition:background .1s;
+}
+.mm-item:active{background:#222;}
+.mm-item.locked{opacity:.55;}
+.mm-info{flex:1;}
+.mm-name{font-size:15px;color:#e8e8e8;font-weight:500;}
+.mm-sub{font-size:12px;color:#666;margin-top:1px;}
+.mm-check{color:#d4956a;font-size:16px;margin-left:8px;}
+.mm-lock{
+  width:20px;height:20px;margin-left:8px;opacity:.5;
+}
+.mm-sep{height:1px;background:#222;margin:4px 20px;}
+
+/* ── ATTACH SHEET ── */
+.attach-sheet{
+  position:fixed;bottom:0;left:0;right:0;z-index:401;
+  background:#1a1a1a;
+  border-radius:20px 20px 0 0;
+  padding:0 0 calc(20px + env(safe-area-inset-bottom));
+  transform:translateY(100%);
+  transition:transform .25s cubic-bezier(.4,0,.2,1);
+}
+.attach-sheet.open{transform:translateY(0);}
+.as-item{
+  display:flex;align-items:center;gap:14px;
+  padding:14px 20px;
+  font-size:15px;color:#e8e8e8;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.as-item:active{background:#222;}
+.as-icon{width:22px;height:22px;opacity:.7;flex-shrink:0;}
+.as-shortcut{margin-left:auto;font-size:12px;color:#555;}
+.as-arrow{margin-left:auto;color:#555;font-size:18px;}
+.as-check{margin-left:auto;color:#d4956a;font-size:16px;}
+.as-sep{height:1px;background:#222;margin:4px 0;}
+
+/* ── PAYWALL SHEET ── */
 .pw-backdrop{
-  position:fixed;inset:0;
+  position:fixed;inset:0;z-index:500;
   background:rgba(0,0,0,.6);
-  backdrop-filter:blur(4px);
-  -webkit-backdrop-filter:blur(4px);
-  z-index:500;
-  display:flex;align-items:flex-end;justify-content:center;
   opacity:0;pointer-events:none;
   transition:opacity .2s;
 }
 .pw-backdrop.open{opacity:1;pointer-events:all;}
 
 .pw-sheet{
-  width:100%;max-width:480px;
-  background:#222;
-  border-radius:20px 20px 0 0;
-  padding:0 0 calc(env(safe-area-inset-bottom) + 20px);
+  position:fixed;inset:0;z-index:501;
+  background:#111;
+  overflow-y:auto;
   transform:translateY(100%);
-  transition:transform .25s cubic-bezier(.4,0,.2,1);
-  overflow:hidden;
+  transition:transform .3s cubic-bezier(.4,0,.2,1);
+  padding-bottom:env(safe-area-inset-bottom);
 }
 .pw-backdrop.open .pw-sheet{transform:translateY(0);}
 
-.pw-handle{
-  width:36px;height:4px;background:var(--border2);
-  border-radius:2px;margin:12px auto 0;
+.pw-close{
+  position:sticky;top:0;
+  padding:16px 20px 8px;
+  background:#111;
+  display:flex;align-items:center;
 }
-.pw-body{padding:20px 24px 4px;}
-
-.pw-top{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
-.pw-icon{
-  width:42px;height:42px;border-radius:12px;
-  background:var(--accent);
+.pw-close-btn{
+  width:32px;height:32px;border-radius:50%;
+  background:#1e1e1e;border:none;
   display:flex;align-items:center;justify-content:center;
-  font-size:20px;font-weight:800;color:#fff;flex-shrink:0;
+  cursor:pointer;color:#888;font-size:18px;
+  -webkit-tap-highlight-color:transparent;
 }
-.pw-top-text h3{font-size:16px;font-weight:600;margin-bottom:2px;}
-.pw-top-text p{font-size:12.5px;color:var(--text2);}
 
-/* Usage meter inside paywall */
-.pw-usage{
-  background:var(--surface);border:1px solid var(--border2);
-  border-radius:10px;padding:12px 14px;margin-bottom:16px;
-}
-.pw-usage-label{
-  display:flex;justify-content:space-between;
-  font-size:12px;color:var(--text2);margin-bottom:7px;
-}
-.pw-usage-label span:last-child{color:var(--accent);font-weight:600;}
-.pw-bar-bg{height:5px;background:var(--border2);border-radius:3px;overflow:hidden;}
-.pw-bar-fill{height:100%;width:100%;background:var(--accent);border-radius:3px;}
+.pw-body{padding:8px 20px 20px;}
+.pw-head{text-align:center;margin-bottom:24px;}
+.pw-head h2{font-size:26px;font-weight:700;margin-bottom:6px;}
+.pw-head p{font-size:14px;color:#888;}
 
-/* Plan cards */
-.pw-plans{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;}
-.pw-plan-card{
-  background:var(--surface);border:1px solid var(--border2);
-  border-radius:10px;padding:12px 14px;
-  display:flex;align-items:center;justify-content:space-between;
-  cursor:pointer;transition:border-color .15s,background .15s;
+/* Plan card */
+.pw-plan{
+  background:#1a1a1a;
+  border-radius:16px;
+  padding:16px;
+  margin-bottom:12px;
 }
-.pw-plan-card:hover{border-color:#555;}
-.pw-plan-card.highlight{
-  border-color:var(--accent);
-  background:rgba(var(--accent-rgb),.08);
+.pw-plan-header{margin-bottom:12px;}
+.pw-plan-name{font-size:18px;font-weight:700;}
+.pw-plan-tagline{font-size:13px;color:#888;margin-top:2px;}
+
+.pw-billing{display:flex;gap:8px;margin-bottom:14px;}
+.pw-bill-opt{
+  flex:1;padding:12px;border-radius:12px;
+  border:2px solid #333;
+  cursor:pointer;position:relative;
+  -webkit-tap-highlight-color:transparent;
+  transition:border-color .15s;
 }
-.pw-plan-name{font-size:13.5px;font-weight:600;}
-.pw-plan-desc{font-size:11.5px;color:var(--text2);margin-top:1px;}
-.pw-plan-price{text-align:right;flex-shrink:0;}
-.pw-plan-price .price{font-size:15px;font-weight:700;}
-.pw-plan-price .per{font-size:11px;color:var(--text2);}
-.pw-badge{
-  font-size:10px;font-weight:700;
-  background:var(--accent);color:#fff;
-  border-radius:4px;padding:2px 6px;
-  margin-left:7px;vertical-align:middle;
+.pw-bill-opt.selected{border-color:#4a7fd4;}
+.pw-bill-opt .radio{
+  width:18px;height:18px;border-radius:50%;
+  border:2px solid #555;margin-bottom:8px;
+  display:flex;align-items:center;justify-content:center;
 }
+.pw-bill-opt.selected .radio{border-color:#4a7fd4;background:#4a7fd4;}
+.pw-bill-opt.selected .radio::after{
+  content:'';width:6px;height:6px;border-radius:50%;background:#fff;
+}
+.pw-bill-opt .price{font-size:17px;font-weight:700;margin-bottom:2px;}
+.pw-bill-opt .bill-label{font-size:12px;color:#888;}
+.pw-bill-opt .save-badge{
+  position:absolute;top:8px;right:8px;
+  background:#333;border-radius:6px;
+  padding:2px 7px;font-size:11px;color:#ccc;font-weight:600;
+}
+.pw-bill-opt.selected .save-badge{background:#4a7fd4;color:#fff;}
 
 .pw-cta{
-  width:100%;padding:13px;
-  background:var(--accent);border:none;border-radius:10px;
-  color:#fff;font-size:15px;font-weight:600;
-  cursor:pointer;transition:background .15s;
-  font-family:inherit;
+  width:100%;padding:15px;
+  background:#e8e8e8;border:none;border-radius:14px;
+  font-size:16px;font-weight:700;color:#111;
+  cursor:pointer;margin-bottom:16px;
+  -webkit-tap-highlight-color:transparent;
 }
-.pw-cta:hover{background:var(--accent-h);}
-.pw-dismiss{
-  display:block;text-align:center;
-  font-size:12px;color:var(--text3);
-  cursor:pointer;padding:10px 0 0;
-}
-.pw-dismiss:hover{color:var(--text2);}
+.pw-cta:active{background:#ccc;}
 
-/* ─── Responsive ─────────────────────────────────────────────────────────── */
-@media(max-width:560px){
-  .sidebar{display:none;}
-  .pw-sheet{border-radius:20px 20px 0 0;}
+.pw-features{margin-bottom:8px;}
+.pw-feat-title{font-size:12px;color:#666;margin-bottom:8px;}
+.pw-feat{
+  display:flex;align-items:flex-start;gap:10px;
+  font-size:13.5px;color:#ccc;margin-bottom:8px;
+  line-height:1.4;
 }
-  </style>
+.pw-feat::before{content:"✓";color:#888;flex-shrink:0;margin-top:1px;}
+.pw-limits{font-size:12px;color:#555;margin-top:10px;cursor:pointer;text-decoration:underline;text-underline-offset:2px;}
+
+.pw-footer{text-align:center;padding:12px 0;display:flex;justify-content:center;gap:20px;}
+.pw-footer a{font-size:12px;color:#555;text-decoration:none;}
+
+/* Scrollbar hidden */
+.messages::-webkit-scrollbar{display:none;}
+.messages{scrollbar-width:none;}
+</style>
 </head>
 <body>
 
-<!-- ══ SIDEBAR ══════════════════════════════════════════════════════════════ -->
-<aside class="sidebar">
-  <div class="sb-top">
-    <div class="sb-brand">
-      <div class="sb-logo">✳</div>
-      Claude
-    </div>
-    <button class="sb-new" onclick="triggerPaywall()" title="New chat">+</button>
+<!-- ══ PIN LOCK ══════════════════════════════════════════════════════════════ -->
+<div id="pinLock">
+  <img class="pin-logo" id="pinLogoImg"
+    src="https://raw.githubusercontent.com/ivanfj633kfdodfd-cmyk/Cld/main/Claude_AI_symbol.svg"
+    alt="Claude"
+    onerror="this.textContent='✳';this.style.fontSize='48px'">
+  <div class="pin-title" id="pinTitle">Set a PIN</div>
+  <div class="pin-sub" id="pinSub">Create a 4-digit PIN to protect your Claude chats</div>
+  <div class="pin-dots" id="pinDots">
+    <div class="pin-dot" id="d0"></div>
+    <div class="pin-dot" id="d1"></div>
+    <div class="pin-dot" id="d2"></div>
+    <div class="pin-dot" id="d3"></div>
   </div>
-
-  <div class="sb-section">Chats and tasks</div>
-  <div class="sb-list">
-    <div class="sb-item locked">Upgrade to see history</div>
-    <div class="sb-item locked">Upgrade to see history</div>
-    <div class="sb-item locked">Upgrade to see history</div>
-  </div>
-
-  <div class="sb-bottom">
-    <div class="sb-user">
-      <div class="sb-avatar" id="sbAvatar">?</div>
-      <div class="sb-userinfo">
-        <div class="sb-username" id="sbName">Loading…</div>
-        <div class="sb-plan">
-          Free plan &nbsp;·&nbsp;
-          <a class="upgrade" href="#" onclick="triggerPaywall();return false;">Upgrade</a>
-        </div>
-      </div>
-    </div>
-  </div>
-</aside>
-
-<!-- ══ MAIN ══════════════════════════════════════════════════════════════════ -->
-<main class="main">
-
-  <!-- Topbar -->
-  <div class="topbar">
-    <div class="topbar-plan">
-      <span>Free plan</span>
-      <span class="dot">·</span>
-      <a class="upgrade-link" href="#" onclick="triggerPaywall();return false;">Upgrade</a>
-    </div>
-  </div>
-
-  <!-- Messages -->
-  <div class="messages" id="messages">
-    <div class="msg-wrap" id="msgWrap">
-      <div class="welcome" id="welcome">
-        <div class="welcome-logo">✳</div>
-        <div class="welcome-title" id="welcomeTitle">What shall we think through?</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Usage bar (shown after first send attempt) -->
-  <div class="usage-bar-wrap" id="usageWrap" style="display:none;">
-    <div class="usage-bar-row">
-      <span>Usage limit</span>
-      <span id="usageLabel">0 / 0 messages</span>
-    </div>
-    <div class="usage-bar-bg">
-      <div class="usage-bar-fill" id="usageFill"></div>
-    </div>
-  </div>
-
-  <!-- Input -->
-  <div class="input-wrap">
-    <div class="input-box" id="inputBox">
-
-      <!-- Attach menu (rendered inside .input-box for correct positioning) -->
-      <div class="attach-menu" id="attachMenu">
-        <div class="am-item" onclick="fakeAction()">
-          <div class="am-icon">
-            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M13.5 3.5L16.5 6.5L7 16a2.5 2.5 0 01-3.5-3.5L13.5 3.5z"/>
-            </svg>
-          </div>
-          Add files or photos
-          <span class="am-shortcut">Ctrl+U</span>
-        </div>
-        <div class="am-item" onclick="fakeAction()">
-          <div class="am-icon">
-            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
-              <rect x="2" y="5" width="16" height="11" rx="2"/>
-              <circle cx="10" cy="10.5" r="2.5"/>
-              <path d="M14 5V4a1 1 0 00-1-1H7a1 1 0 00-1 1v1"/>
-            </svg>
-          </div>
-          Take a screenshot
-        </div>
-        <div class="am-sep"></div>
-        <div class="am-item" onclick="fakeAction()">
-          <div class="am-icon">
-            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
-              <rect x="3" y="3" width="14" height="14" rx="2"/>
-              <path d="M7 10h6M10 7v6"/>
-            </svg>
-          </div>
-          Add to project
-          <span class="am-arrow">›</span>
-        </div>
-        <div class="am-sep"></div>
-        <div class="am-item" onclick="fakeAction()">
-          <div class="am-icon">
-            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M4 6h12M4 10h8M4 14h10"/>
-            </svg>
-          </div>
-          Skills
-          <span class="am-arrow">›</span>
-        </div>
-        <div class="am-item" onclick="fakeAction()">
-          <div class="am-icon">
-            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
-              <circle cx="10" cy="10" r="7"/>
-              <path d="M10 7v3l2 2"/>
-            </svg>
-          </div>
-          Connectors
-          <span class="am-arrow">›</span>
-        </div>
-        <div class="am-item" onclick="fakeAction()">
-          <div class="am-icon">
-            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M10 3L3 7l7 4 7-4-7-4zM3 13l7 4 7-4M3 10l7 4 7-4"/>
-            </svg>
-          </div>
-          Design system
-          <span class="am-arrow">›</span>
-        </div>
-        <div class="am-sep"></div>
-        <div class="am-item" onclick="fakeAction()">
-          <div class="am-icon">
-            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
-              <circle cx="10" cy="10" r="7"/>
-              <path d="M7 10h6"/>
-            </svg>
-          </div>
-          Web search
-          <span class="am-check">✓</span>
-        </div>
-      </div>
-
-      <!-- Model menu -->
-      <div class="model-menu" id="modelMenu">
-        <div class="mm-item selected" onclick="selectModel('Sonnet 5','Most capable · fast',this)">
-          <div class="mm-dot" style="background:#d4956a;"></div>
-          <div class="mm-item-info">
-            <div class="mm-name">Claude Sonnet 5</div>
-            <div class="mm-sub">Default · best balance</div>
-          </div>
-          <span class="mm-check">✓</span>
-        </div>
-        <div class="mm-item" onclick="selectModel('Opus 5.5','Most powerful',this)">
-          <div class="mm-dot" style="background:#9c7bea;"></div>
-          <div class="mm-item-info">
-            <div class="mm-name">Claude Opus 5.5</div>
-            <div class="mm-sub">Most powerful · Sep 2026</div>
-          </div>
-        </div>
-        <div class="mm-item" onclick="selectModel('Opus 5','Deep reasoning',this)">
-          <div class="mm-dot" style="background:#7b9dea;"></div>
-          <div class="mm-item-info">
-            <div class="mm-name">Claude Opus 5</div>
-            <div class="mm-sub">Deep reasoning · agentic</div>
-          </div>
-        </div>
-        <div class="mm-item" onclick="selectModel('Haiku 5','Fast · light',this)">
-          <div class="mm-dot" style="background:#6abf6a;"></div>
-          <div class="mm-item-info">
-            <div class="mm-name">Claude Haiku 5</div>
-            <div class="mm-sub">Fast · lightweight</div>
-          </div>
-        </div>
-        <div class="mm-sep" style="height:1px;background:var(--border);margin:4px 0;"></div>
-        <div class="mm-item" onclick="selectModel('Sonnet 4.5','Previous gen',this)">
-          <div class="mm-dot" style="background:#888;"></div>
-          <div class="mm-item-info">
-            <div class="mm-name">Claude Sonnet 4.5</div>
-            <div class="mm-sub">Previous generation</div>
-          </div>
-        </div>
-      </div>
-
-      <textarea
-        id="inputTa"
-        class="input-ta"
-        placeholder="How can I help you today?"
-        rows="1"
-        onkeydown="handleKey(event)"
-        oninput="autoResize(this)"
-      ></textarea>
-
-      <div class="input-footer">
-        <div class="input-left">
-          <!-- Attach -->
-          <button class="attach-btn" id="attachBtn" onclick="toggleAttach(event)" title="Attach">
-            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M10 3v10a3 3 0 006 0V5a5 5 0 00-10 0v9a7 7 0 0014 0V5"/>
-            </svg>
-          </button>
-          <!-- Mode tabs -->
-          <div class="mode-tabs">
-            <button class="mode-tab active" onclick="setMode('chat',this)">Chat</button>
-            <button class="mode-tab" onclick="setMode('cowork',this)">Cowork</button>
-          </div>
-        </div>
-
-        <div class="input-right">
-          <button class="model-btn" id="modelBtn" onclick="toggleModel(event)">
-            <span id="modelLabel">Sonnet 5</span>
-            <span style="color:var(--text3);font-size:11px;margin:0 2px;">Medium</span>
-            <svg class="chevron" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M2 4l4 4 4-4"/>
-            </svg>
-          </button>
-          <button class="send-btn" id="sendBtn" onclick="handleSend()" disabled>
-            <svg viewBox="0 0 16 16" fill="currentColor">
-              <path d="M8 2l6 12H2L8 2z"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-    </div>
-    <div class="disclaimer">Claude can make mistakes. Please double-check responses.</div>
-  </div>
-
-</main>
-
-<!-- ══ BIOMETRIC LOCK ════════════════════════════════════════════════════════ -->
-<div id="bioLock">
-
-  <!-- State 1: "Enable biometrics?" prompt -->
-  <div id="bioPromptWrap" style="display:none;flex-direction:column;align-items:center;text-align:center;padding:0 32px;gap:0;">
-    <div class="bio-logo">✳</div>
-    <div class="bio-title">Protect your chats</div>
-    <div class="bio-sub" style="margin-bottom:32px;">
-      Enable biometric authentication to secure access to Claude chat on this device.
-    </div>
-    <button class="pw-cta" style="max-width:280px;margin-bottom:10px;" onclick="enableBioYes()">
-      Enable biometrics
+  <div class="pin-status" id="pinStatus"></div>
+  <div class="pin-grid" id="pinGrid">
+    <button class="pin-key" onclick="pinKey('1')">1</button>
+    <button class="pin-key" onclick="pinKey('2')">2 <span class="letters">ABC</span></button>
+    <button class="pin-key" onclick="pinKey('3')">3 <span class="letters">DEF</span></button>
+    <button class="pin-key" onclick="pinKey('4')">4 <span class="letters">GHI</span></button>
+    <button class="pin-key" onclick="pinKey('5')">5 <span class="letters">JKL</span></button>
+    <button class="pin-key" onclick="pinKey('6')">6 <span class="letters">MNO</span></button>
+    <button class="pin-key" onclick="pinKey('7')">7 <span class="letters">PQRS</span></button>
+    <button class="pin-key" onclick="pinKey('8')">8 <span class="letters">TUV</span></button>
+    <button class="pin-key" onclick="pinKey('9')">9 <span class="letters">WXYZ</span></button>
+    <button class="pin-key" style="background:transparent;border:none;" disabled></button>
+    <button class="pin-key" onclick="pinKey('0')">0</button>
+    <button class="pin-key del" onclick="pinDel()">
+      <img src="https://www.svgrepo.com/show/488066/delete.svg" style="width:22px;height:22px;filter:invert(.6);" alt="del">
     </button>
-    <div class="bio-skip" onclick="enableBioNo()">Skip, open without protection</div>
   </div>
-
-  <!-- State 2: Scan screen -->
-  <div id="bioScanWrap" style="display:none;flex-direction:column;align-items:center;text-align:center;padding:0 32px;gap:0;">
-    <div class="bio-logo">✳</div>
-    <div class="bio-title">Claude</div>
-    <div class="bio-sub">Verify your identity to continue</div>
-    <div class="bio-btn" id="bioBtn" onclick="authenticate()">
-      <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
-        <path d="M14 10.5C15.8 8.9 18 8 20.3 8c4.9 0 8.8 4 8.8 9v4"/>
-        <path d="M11 16c0-5.5 4.3-9 9-9"/>
-        <path d="M20 17v6a3 3 0 006 0v-4"/>
-        <path d="M14 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/>
-        <path d="M8 24c.5-3.5 2-6.5 4.5-8.5"/>
-        <path d="M20 23v5"/>
-        <path d="M17 32c.8.6 1.9 1 3 1s2.2-.4 3-1"/>
-      </svg>
-    </div>
-    <div class="bio-status" id="bioStatus"></div>
-    <div class="bio-hint">Touch the sensor or use Face ID</div>
-    <div class="bio-skip" onclick="skipBio()">Skip</div>
-  </div>
-
+  <div class="pin-skip" onclick="pinSkip()">Skip, open without PIN</div>
 </div>
 
-<!-- ══ PAYWALL MODAL ══════════════════════════════════════════════════════════ -->
-<div class="pw-backdrop" id="pwBackdrop" onclick="handleBackdropClick(event)">
+<!-- ══ TOPBAR ════════════════════════════════════════════════════════════════ -->
+<div class="topbar">
+  Free plan · <a href="#" onclick="openPaywall();return false;">Upgrade</a>
+</div>
+
+<!-- ══ MESSAGES ══════════════════════════════════════════════════════════════ -->
+<div class="messages" id="messages">
+  <div class="msg-wrap" id="msgWrap">
+    <div class="welcome" id="welcome">
+      <img class="welcome-logo"
+        src="https://raw.githubusercontent.com/ivanfj633kfdodfd-cmyk/Cld/main/Claude_AI_symbol.svg"
+        alt="Claude"
+        onerror="this.outerHTML='<div style=\'font-size:48px;color:#d4956a;\'>✳</div>'">
+      <div class="welcome-title" id="welcomeTitle">What's cooking?</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ INPUT ═════════════════════════════════════════════════════════════════ -->
+<div class="input-area">
+  <div class="input-upgrade">
+    <span>Get more with Claude Pro</span>
+    <a href="#" onclick="openPaywall();return false;">Upgrade to Pro</a>
+  </div>
+  <div class="input-box">
+    <div class="input-row">
+      <textarea id="inputTa" class="input-ta" rows="1"
+        placeholder="Chat with Claude..."
+        onkeydown="handleKey(event)"
+        oninput="onInput(this)"></textarea>
+    </div>
+    <div class="input-toolbar">
+      <div class="tb-left">
+        <button class="tb-plus" onclick="openAttach()" title="Attach">+</button>
+        <button class="model-pill" id="modelPill" onclick="openModel()">
+          <span id="modelLabel">Sonnet 5</span>
+          <span style="color:#888;font-size:12px;margin-left:2px;">Medium</span>
+          <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4l4 4 4-4"/></svg>
+        </button>
+      </div>
+      <div class="tb-right">
+        <button class="tb-voice">
+          <img src="https://www.svgrepo.com/show/532093/microphone.svg" alt="mic" style="width:18px;height:18px;filter:invert(.6);">
+        </button>
+        <button class="send-btn" id="sendBtn" onclick="handleSend()" disabled>
+          <img src="https://www.svgrepo.com/show/535234/arrow-up.svg" alt="send">
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="disclaimer">Claude is AI and can make mistakes.</div>
+</div>
+
+<!-- ══ MODEL SHEET ════════════════════════════════════════════════════════════ -->
+<div class="sheet-backdrop" id="modelBackdrop" onclick="closeModel()"></div>
+<div class="model-sheet" id="modelSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title">Choose model</div>
+
+  <!-- Free models -->
+  <div class="mm-item" id="mm-sonnet5" onclick="selectModel('Sonnet 5','claude-sonnet-5',this)">
+    <div class="mm-info">
+      <div class="mm-name">Claude Sonnet 5</div>
+      <div class="mm-sub">Default · best balance</div>
+    </div>
+    <span class="mm-check">✓</span>
+  </div>
+  <div class="mm-item" id="mm-haiku5" onclick="selectModel('Haiku 5','claude-haiku-5',this)">
+    <div class="mm-info">
+      <div class="mm-name">Claude Haiku 5</div>
+      <div class="mm-sub">Fast · lightweight</div>
+    </div>
+  </div>
+  <div class="mm-sep"></div>
+
+  <!-- Pro-only models -->
+  <div class="mm-item locked" onclick="openPaywall();closeModel();">
+    <div class="mm-info">
+      <div class="mm-name">Claude Opus 5.5</div>
+      <div class="mm-sub">Most powerful · Sep 2026</div>
+    </div>
+    <img class="mm-lock" src="https://www.svgrepo.com/show/532037/lock.svg" alt="locked" style="filter:invert(.4);">
+  </div>
+  <div class="mm-item locked" onclick="openPaywall();closeModel();">
+    <div class="mm-info">
+      <div class="mm-name">Claude Opus 5</div>
+      <div class="mm-sub">Deep reasoning · agentic</div>
+    </div>
+    <img class="mm-lock" src="https://www.svgrepo.com/show/532037/lock.svg" alt="locked" style="filter:invert(.4);">
+  </div>
+  <div class="mm-item locked" onclick="openPaywall();closeModel();">
+    <div class="mm-info">
+      <div class="mm-name">Claude Sonnet 4.5</div>
+      <div class="mm-sub">Previous generation</div>
+    </div>
+    <img class="mm-lock" src="https://www.svgrepo.com/show/532037/lock.svg" alt="locked" style="filter:invert(.4);">
+  </div>
+</div>
+
+<!-- ══ ATTACH SHEET ═══════════════════════════════════════════════════════════ -->
+<div class="sheet-backdrop" id="attachBackdrop" onclick="closeAttach()"></div>
+<div class="attach-sheet" id="attachSheet">
+  <div class="sheet-handle"></div>
+  <div class="as-item" onclick="closeAttach();openPaywall();">
+    <img class="as-icon" src="https://www.svgrepo.com/show/532381/paperclip.svg" alt="" style="filter:invert(.6);">
+    Add files or photos
+    <span class="as-shortcut">Ctrl+U</span>
+  </div>
+  <div class="as-item" onclick="closeAttach();openPaywall();">
+    <img class="as-icon" src="https://www.svgrepo.com/show/532230/camera.svg" alt="" style="filter:invert(.6);">
+    Take a screenshot
+  </div>
+  <div class="as-sep"></div>
+  <div class="as-item" onclick="closeAttach();openPaywall();">
+    <img class="as-icon" src="https://www.svgrepo.com/show/532185/folder.svg" alt="" style="filter:invert(.6);">
+    Add to project
+    <span class="as-arrow">›</span>
+  </div>
+  <div class="as-sep"></div>
+  <div class="as-item" onclick="closeAttach();openPaywall();">
+    <img class="as-icon" src="https://www.svgrepo.com/show/532167/component.svg" alt="" style="filter:invert(.6);">
+    Skills
+    <span class="as-arrow">›</span>
+  </div>
+  <div class="as-item" onclick="closeAttach();openPaywall();">
+    <img class="as-icon" src="https://www.svgrepo.com/show/532077/link.svg" alt="" style="filter:invert(.6);">
+    Connectors
+    <span class="as-arrow">›</span>
+  </div>
+  <div class="as-sep"></div>
+  <div class="as-item" onclick="closeAttach();">
+    <img class="as-icon" src="https://www.svgrepo.com/show/532256/globe.svg" alt="" style="filter:invert(.6);">
+    Web search
+    <span class="as-check">✓</span>
+  </div>
+</div>
+
+<!-- ══ PAYWALL ════════════════════════════════════════════════════════════════ -->
+<div class="pw-backdrop" id="pwBackdrop">
   <div class="pw-sheet" id="pwSheet">
-    <div class="pw-handle"></div>
+
+    <div class="pw-close">
+      <button class="pw-close-btn" onclick="closePaywall()">✕</button>
+    </div>
+
     <div class="pw-body">
-
-      <div class="pw-top">
-        <div class="pw-icon">✳</div>
-        <div class="pw-top-text">
-          <h3>You've reached your free limit</h3>
-          <p>Upgrade to Claude Pro to keep going</p>
-        </div>
+      <div class="pw-head">
+        <h2>Get more Claude</h2>
+        <p>Choose the plan right for you</p>
       </div>
 
-      <!-- Usage meter -->
-      <div class="pw-usage">
-        <div class="pw-usage-label">
-          <span>Free plan usage</span>
-          <span>Limit reached</span>
+      <!-- PRO -->
+      <div class="pw-plan">
+        <div class="pw-plan-header">
+          <div class="pw-plan-name">Pro</div>
+          <div class="pw-plan-tagline">For everyday productivity</div>
         </div>
-        <div class="pw-bar-bg">
-          <div class="pw-bar-fill"></div>
+        <div class="pw-billing">
+          <div class="pw-bill-opt selected" id="pro-monthly" onclick="selectBilling('pro','monthly')">
+            <div class="radio"></div>
+            <div class="price">$20.00</div>
+            <div class="bill-label">Billed monthly</div>
+          </div>
+          <div class="pw-bill-opt" id="pro-annual" onclick="selectBilling('pro','annual')">
+            <div class="radio"></div>
+            <div class="price">$204.00</div>
+            <div class="bill-label">Billed annually</div>
+            <span class="save-badge">Save 15%</span>
+          </div>
         </div>
+        <button class="pw-cta" onclick="goPay('pro')">Get Pro plan</button>
+        <div class="pw-features">
+          <div class="pw-feat-title">Everything in Free, plus:</div>
+          <div class="pw-feat">Everything in Free</div>
+          <div class="pw-feat">More usage*</div>
+          <div class="pw-feat">Access Claude Code and Cowork</div>
+          <div class="pw-feat">Access more Claude models</div>
+          <div class="pw-feat">Organize chats and documents with unlimited Projects</div>
+        </div>
+        <div class="pw-limits">Limits apply</div>
       </div>
 
-      <!-- Plan cards -->
-      <div class="pw-plans">
-        <div class="pw-plan-card" onclick="selectPwPlan(this)">
-          <div>
-            <div class="pw-plan-name">Claude Pro</div>
-            <div class="pw-plan-desc">5× usage · Code · Projects · all models</div>
+      <!-- MAX -->
+      <div class="pw-plan">
+        <div class="pw-plan-header">
+          <div class="pw-plan-name">Max</div>
+          <div class="pw-plan-tagline">More time with Claude</div>
+        </div>
+        <div class="pw-billing">
+          <div class="pw-bill-opt selected" id="max-5x" onclick="selectBilling('max','5x')">
+            <div class="radio"></div>
+            <div class="price">$100.00</div>
+            <div class="bill-label">5x more usage than Pro</div>
+            <div class="bill-label">Billed monthly</div>
           </div>
-          <div class="pw-plan-price">
-            <div class="price">$20</div>
-            <div class="per">/ month</div>
+          <div class="pw-bill-opt" id="max-20x" onclick="selectBilling('max','20x')">
+            <div class="radio"></div>
+            <div class="price">$200.00</div>
+            <div class="bill-label">20x more usage than Pro</div>
+            <div class="bill-label">Billed monthly</div>
           </div>
         </div>
-        <div class="pw-plan-card highlight" onclick="selectPwPlan(this)">
-          <div>
-            <div class="pw-plan-name">
-              Claude Max 5×
-              <span class="pw-badge">Popular</span>
-            </div>
-            <div class="pw-plan-desc">5× more than Pro · early access</div>
-          </div>
-          <div class="pw-plan-price">
-            <div class="price">$100</div>
-            <div class="per">/ month</div>
-          </div>
+        <button class="pw-cta" onclick="goPay('max')">Get Max plan</button>
+        <div class="pw-features">
+          <div class="pw-feat-title">Everything in Pro, plus:</div>
+          <div class="pw-feat">Everything in Pro</div>
+          <div class="pw-feat">Choose 5x or 20x more usage than Pro</div>
+          <div class="pw-feat">Priority access at high traffic times</div>
+          <div class="pw-feat">Early access to advanced Claude features</div>
         </div>
-        <div class="pw-plan-card" onclick="selectPwPlan(this)">
-          <div>
-            <div class="pw-plan-name">
-              Claude Max 20×
-              <span class="pw-badge">Power</span>
-            </div>
-            <div class="pw-plan-desc">20× more than Pro · highest limits</div>
-          </div>
-          <div class="pw-plan-price">
-            <div class="price">$200</div>
-            <div class="per">/ month</div>
-          </div>
-        </div>
+        <div class="pw-limits">Limits apply</div>
       </div>
 
-      <button class="pw-cta" onclick="goSubscribe()">Subscribe via crypto</button>
-      <span class="pw-dismiss" onclick="closePw()">Maybe later</span>
+      <div class="pw-footer">
+        <a href="#">Terms</a>
+        <a href="#">Privacy Policy</a>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
-/* ── Telegram Web App ─────────────────────────────────────────────────────── */
-const tg   = window.Telegram?.WebApp;
+const tg     = window.Telegram?.WebApp;
 const tgUser = tg?.initDataUnsafe?.user ?? null;
 
-if (tg) {
-  tg.ready();
-  tg.expand();
-  tg.setHeaderColor?.('#111');
-  tg.setBackgroundColor?.('#1a1a1a');
+if(tg){ tg.ready(); tg.expand(); tg.setHeaderColor?.('#111'); tg.setBackgroundColor?.('#111'); }
+
+/* ── Personalise welcome ── */
+(function(){
+  const name = tgUser ? tgUser.first_name || 'there' : 'there';
+  const phrases = [
+    `What's cooking, ${name}?`,
+    `What shall we think through?`,
+    `How can I help, ${name}?`,
+    `What's on your mind?`,
+  ];
+  document.getElementById('welcomeTitle').textContent =
+    phrases[Math.floor(Math.random()*phrases.length)];
+})();
+
+/* ══════════════════════ PIN ══════════════════════════════════════════════ */
+const PIN_KEY = 'claude_pin_v1';
+let pinBuffer = '';
+let pinMode   = 'none'; // 'set' | 'set2' | 'verify' | 'none'
+let pinFirst  = '';
+
+function initPin(){
+  const stored = localStorage.getItem(PIN_KEY);
+  if(!stored){
+    pinMode = 'set';
+    document.getElementById('pinTitle').textContent = 'Set a PIN';
+    document.getElementById('pinSub').textContent   = 'Create a 4-digit PIN to protect your chats';
+  } else {
+    pinMode = 'verify';
+    document.getElementById('pinTitle').textContent = 'Enter PIN';
+    document.getElementById('pinSub').textContent   = 'Verify your identity to open Claude';
+  }
 }
 
-/* ── Biometric lock ───────────────────────────────────────────────────────── */
-const BM = tg?.BiometricManager;
-let bioEnabled = false;
-
-function unlockApp() {
-  const lock = document.getElementById('bioLock');
-  lock.classList.add('hidden');
-  setTimeout(() => { lock.style.display = 'none'; }, 360);
+function pinKey(d){
+  if(pinBuffer.length >= 4) return;
+  pinBuffer += d;
+  updateDots();
+  if(pinBuffer.length === 4) setTimeout(checkPin, 120);
 }
 
-function setBioStatus(msg, isError = false) {
-  const el = document.getElementById('bioStatus');
-  el.textContent = msg;
-  el.className = 'bio-status' + (isError ? ' error' : '');
+function pinDel(){
+  if(pinBuffer.length > 0){
+    pinBuffer = pinBuffer.slice(0,-1);
+    updateDots();
+  }
 }
 
-function showBioPrompt() {
-  // Show "enable biometrics?" UI instead of directly scanning
-  document.getElementById('bioPromptWrap').style.display = 'flex';
-  document.getElementById('bioScanWrap').style.display   = 'none';
+function updateDots(){
+  for(let i=0;i<4;i++){
+    document.getElementById('d'+i).classList.toggle('filled', i < pinBuffer.length);
+  }
 }
 
-function showBioScan() {
-  document.getElementById('bioPromptWrap').style.display = 'none';
-  document.getElementById('bioScanWrap').style.display   = 'flex';
-}
-
-function enableBioYes() {
-  showBioScan();
-  // Must be called synchronously inside a user gesture (click handler)
-  if (!BM) { unlockApp(); return; }
-
-  BM.init({ reason: 'Protect your Claude chat' }, () => {
-    if (!BM.isInited || !BM.isBiometricAvailable) {
-      setBioStatus('Biometrics not available on this device.', true);
-      setTimeout(unlockApp, 1200);
-      return;
+function checkPin(){
+  if(pinMode === 'set'){
+    pinFirst  = pinBuffer;
+    pinBuffer = '';
+    updateDots();
+    pinMode = 'set2';
+    document.getElementById('pinTitle').textContent = 'Confirm PIN';
+    document.getElementById('pinSub').textContent   = 'Enter the same PIN again';
+    document.getElementById('pinStatus').textContent = '';
+  } else if(pinMode === 'set2'){
+    if(pinBuffer === pinFirst){
+      localStorage.setItem(PIN_KEY, pinBuffer);
+      unlockApp();
+    } else {
+      document.getElementById('pinStatus').textContent = 'PINs do not match. Try again.';
+      pinBuffer = ''; pinFirst = ''; pinMode = 'set';
+      updateDots();
+      document.getElementById('pinTitle').textContent = 'Set a PIN';
+      document.getElementById('pinSub').textContent   = 'Create a 4-digit PIN to protect your chats';
     }
-
-    // requestAccess is called directly inside click → Telegram allows it
-    BM.requestAccess(
-      { reason: 'Secure access to Claude chat' },
-      (granted) => {
-        if (!granted) {
-          setBioStatus('Permission not granted.', true);
-          setTimeout(unlockApp, 1000);
-          return;
-        }
-        // Immediately authenticate after access granted
-        BM.authenticate(
-          { reason: 'Open Claude chat' },
-          (isAuth) => {
-            if (isAuth) {
-              setBioStatus('Verified');
-              setTimeout(unlockApp, 300);
-            } else {
-              setBioStatus('Not recognized. Tap to retry.', true);
-            }
-          }
-        );
-      }
-    );
-  });
+  } else if(pinMode === 'verify'){
+    const stored = localStorage.getItem(PIN_KEY);
+    if(pinBuffer === stored){
+      unlockApp();
+    } else {
+      document.getElementById('pinStatus').textContent = 'Incorrect PIN. Try again.';
+      pinBuffer = '';
+      updateDots();
+    }
+  }
 }
 
-function enableBioNo() {
+function pinSkip(){
   unlockApp();
 }
 
-function authenticate() {
-  if (!BM || !BM.isInited) { unlockApp(); return; }
-  setBioStatus('Touch the sensor…');
-
-  BM.authenticate(
-    { reason: 'Open Claude chat' },
-    (isAuth) => {
-      if (isAuth) {
-        setBioStatus('Verified');
-        setTimeout(unlockApp, 300);
-      } else {
-        setBioStatus('Not recognized. Tap to retry.', true);
-      }
-    }
-  );
+function unlockApp(){
+  const lock = document.getElementById('pinLock');
+  lock.classList.add('out');
+  setTimeout(()=>{ lock.style.display='none'; }, 320);
 }
 
-function skipBio() { unlockApp(); }
-
-window.addEventListener('DOMContentLoaded', () => {
-  if (!BM || !tg) {
-    unlockApp();
-    return;
-  }
-  setTimeout(showBioPrompt, 400);
-});
-
-/* ── User info ────────────────────────────────────────────────────────────── */
-(function initUser() {
-  const name = tgUser
-    ? [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ')
-    : 'Guest';
-
-  document.getElementById('sbName').textContent = name;
-  document.getElementById('welcomeTitle').textContent =
-    `What shall we think through?`;
-
-  // Sidebar avatar
-  const avatarEl = document.getElementById('sbAvatar');
-  if (tgUser?.photo_url) {
-    avatarEl.innerHTML = `<img src="${tgUser.photo_url}" alt="">`;
-  } else {
-    avatarEl.textContent = name.charAt(0).toUpperCase();
-  }
-})();
-
-/* ── Input auto-resize ────────────────────────────────────────────────────── */
+/* ══════════════════════ INPUT ══════════════════════════════════════════════ */
 const ta      = document.getElementById('inputTa');
 const sendBtn = document.getElementById('sendBtn');
 
-function autoResize(el) {
+function onInput(el){
   el.style.height = 'auto';
-  el.style.height = Math.min(el.scrollHeight, 200) + 'px';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
   sendBtn.disabled = !el.value.trim();
 }
 
-function handleKey(e) {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+function handleKey(e){
+  if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); handleSend(); }
 }
 
-/* ── Messages ─────────────────────────────────────────────────────────────── */
+/* ══════════════════════ MESSAGES ══════════════════════════════════════════ */
 let msgCount = 0;
+const THINKING_PHRASES = ['Thinking…','Analyzing…','Solving…','Reasoning…','Processing…'];
 
-function addMsg(role, text) {
-  const welcome = document.getElementById('welcome');
-  if (welcome) welcome.remove();
-
-  const wrap = document.getElementById('msgWrap');
-  const photoUrl = tgUser?.photo_url;
-  const name = tgUser
-    ? [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ')
-    : 'You';
-
-  const iconHtml = role === 'ai'
-    ? `<div class="msg-icon ai-icon">✳</div>`
-    : `<div class="msg-icon user-icon">${
-        photoUrl
-          ? `<img src="${photoUrl}" alt="">`
-          : `<div class="initials">${name.charAt(0).toUpperCase()}</div>`
-      }</div>`;
-
-  const senderName = role === 'ai' ? 'Claude' : name;
-  const div = document.createElement('div');
-  div.className = `msg ${role}`;
-  div.innerHTML = `
-    ${iconHtml}
-    <div class="msg-body">
-      <div class="msg-name">${senderName}</div>
-      <div class="msg-bubble">${esc(text)}</div>
-    </div>`;
-  wrap.appendChild(div);
-
-  const msgs = document.getElementById('messages');
-  msgs.scrollTop = msgs.scrollHeight;
-}
-
-function esc(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
-/* ── Send ─────────────────────────────────────────────────────────────────── */
-function handleSend() {
+function handleSend(){
   const text = ta.value.trim();
-  if (!text) return;
+  if(!text) return;
+
+  const welcome = document.getElementById('welcome');
+  if(welcome) welcome.remove();
 
   addMsg('user', text);
-  ta.value = '';
-  ta.style.height = 'auto';
-  sendBtn.disabled = true;
+  ta.value=''; ta.style.height='auto'; sendBtn.disabled=true;
   msgCount++;
 
-  // Show usage bar
-  showUsage(msgCount, msgCount);
+  // Show thinking indicator
+  const thinkId = showThinking();
 
-  // Trigger paywall after first message
-  setTimeout(triggerPaywall, 400);
+  // After delay: hide thinking, show paywall
+  setTimeout(()=>{
+    removeThinking(thinkId);
+    openPaywall();
+  }, 1800 + Math.random()*800);
 }
 
-/* ── Usage bar ────────────────────────────────────────────────────────────── */
-function showUsage(used, max) {
-  const wrap  = document.getElementById('usageWrap');
-  const label = document.getElementById('usageLabel');
-  const fill  = document.getElementById('usageFill');
-  wrap.style.display = 'block';
-  label.textContent = `${used} / ${max} messages`;
-  fill.style.width  = '100%';
-}
+function addMsg(role, text){
+  const wrap = document.getElementById('msgWrap');
+  const div  = document.createElement('div');
+  div.className = `msg ${role}`;
+  const photoUrl = tgUser?.photo_url;
+  const name = tgUser ? [tgUser.first_name,tgUser.last_name].filter(Boolean).join(' ') : 'You';
 
-/* ── Paywall ──────────────────────────────────────────────────────────────── */
-function triggerPaywall() {
-  document.getElementById('pwBackdrop').classList.add('open');
-}
-
-function closePw() {
-  document.getElementById('pwBackdrop').classList.remove('open');
-}
-
-function handleBackdropClick(e) {
-  if (e.target === document.getElementById('pwBackdrop')) closePw();
-}
-
-function selectPwPlan(el) {
-  document.querySelectorAll('.pw-plan-card').forEach(c => c.classList.remove('highlight'));
-  el.classList.add('highlight');
-}
-
-function goSubscribe() {
-  closePw();
-  if (tg) {
-    const botUsername = window.BOT_USERNAME || 'CIaudeRobot';
-    tg.openTelegramLink(`https://t.me/${botUsername}?start=subscribe`);
+  if(role==='user'){
+    div.innerHTML = `<div class="msg-name">${esc(name)}</div><div class="msg-bubble">${esc(text)}</div>`;
+  } else {
+    div.innerHTML = `<div class="msg-name">Claude</div><div class="msg-bubble">${esc(text)}</div>`;
   }
+  wrap.appendChild(div);
+  document.getElementById('messages').scrollTop = 99999;
 }
 
-/* ── Attach menu ──────────────────────────────────────────────────────────── */
-function toggleAttach(e) {
-  e.stopPropagation();
-  const m = document.getElementById('attachMenu');
-  const b = document.getElementById('attachBtn');
-  const open = m.classList.toggle('open');
-  b.style.color = open ? 'var(--text)' : '';
-  if (open) { document.getElementById('modelMenu').classList.remove('open'); }
+let _thinkCounter = 0;
+function showThinking(){
+  const id = 'think' + (++_thinkCounter);
+  const phrase = THINKING_PHRASES[Math.floor(Math.random()*THINKING_PHRASES.length)];
+  const wrap = document.getElementById('msgWrap');
+  const div  = document.createElement('div');
+  div.id = id;
+  div.className = 'thinking';
+  div.innerHTML = `
+    <div class="thinking-dots"><span></span><span></span><span></span></div>
+    <span class="thinking-label">${phrase}</span>`;
+  wrap.appendChild(div);
+  document.getElementById('messages').scrollTop = 99999;
+  return id;
 }
 
-function fakeAction() {
-  document.getElementById('attachMenu').classList.remove('open');
-  triggerPaywall();
+function removeThinking(id){
+  const el = document.getElementById(id);
+  if(el) el.remove();
 }
 
-/* ── Model menu ───────────────────────────────────────────────────────────── */
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* ══════════════════════ MODEL SHEET ═══════════════════════════════════════ */
 let currentModel = 'Sonnet 5';
 
-function toggleModel(e) {
-  e.stopPropagation();
-  const m  = document.getElementById('modelMenu');
-  const mb = document.getElementById('modelBtn');
-  const open = m.classList.toggle('open');
-  mb.classList.toggle('open', open);
-  if (open) { document.getElementById('attachMenu').classList.remove('open'); }
+function openModel(){
+  document.getElementById('modelBackdrop').classList.add('open');
+  document.getElementById('modelSheet').classList.add('open');
+  document.getElementById('modelPill').classList.add('open');
 }
-
-function selectModel(name, sub, el) {
+function closeModel(){
+  document.getElementById('modelBackdrop').classList.remove('open');
+  document.getElementById('modelSheet').classList.remove('open');
+  document.getElementById('modelPill').classList.remove('open');
+}
+function selectModel(name, id, el){
   currentModel = name;
   document.getElementById('modelLabel').textContent = name;
-  document.querySelectorAll('.mm-item').forEach(i => {
-    i.classList.remove('selected');
-    const chk = i.querySelector('.mm-check');
-    if (chk) chk.remove();
-  });
-  el.classList.add('selected');
+  document.querySelectorAll('.mm-item .mm-check').forEach(c=>c.remove());
   const chk = document.createElement('span');
-  chk.className = 'mm-check'; chk.textContent = '✓';
+  chk.className='mm-check'; chk.textContent='✓';
   el.appendChild(chk);
-  document.getElementById('modelMenu').classList.remove('open');
-  document.getElementById('modelBtn').classList.remove('open');
+  closeModel();
 }
 
-/* ── Mode tabs ────────────────────────────────────────────────────────────── */
-function setMode(mode, el) {
-  document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
+/* ══════════════════════ ATTACH SHEET ══════════════════════════════════════ */
+function openAttach(){
+  document.getElementById('attachBackdrop').classList.add('open');
+  document.getElementById('attachSheet').classList.add('open');
+}
+function closeAttach(){
+  document.getElementById('attachBackdrop').classList.remove('open');
+  document.getElementById('attachSheet').classList.remove('open');
 }
 
-/* ── Close dropdowns on outside click ────────────────────────────────────── */
-document.addEventListener('click', () => {
-  document.getElementById('attachMenu').classList.remove('open');
-  document.getElementById('modelMenu').classList.remove('open');
-  document.getElementById('modelBtn').classList.remove('open');
-  document.getElementById('attachBtn').style.color = '';
+/* ══════════════════════ PAYWALL ═══════════════════════════════════════════ */
+function openPaywall(){
+  document.getElementById('pwBackdrop').classList.add('open');
+}
+function closePaywall(){
+  document.getElementById('pwBackdrop').classList.remove('open');
+}
+function selectBilling(plan, opt){
+  if(plan==='pro'){
+    document.getElementById('pro-monthly').classList.toggle('selected', opt==='monthly');
+    document.getElementById('pro-annual').classList.toggle('selected',  opt==='annual');
+  } else {
+    document.getElementById('max-5x').classList.toggle('selected',  opt==='5x');
+    document.getElementById('max-20x').classList.toggle('selected', opt==='20x');
+  }
+}
+function goPay(plan){
+  closePaywall();
+  const botUsername = window.BOT_USERNAME || 'CIaudeRobot';
+  if(tg) tg.openTelegramLink(`https://t.me/${botUsername}?start=subscribe`);
+}
+
+/* ══════════════════════ INIT ══════════════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded', ()=>{
+  initPin();
 });
 </script>
 </body>
