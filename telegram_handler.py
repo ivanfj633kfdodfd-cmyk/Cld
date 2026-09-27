@@ -335,11 +335,17 @@ def _handle_message(msg: dict) -> None:
         clear_state(user_id)
 
         if param == "subscribe":
+            rm = send(chat_id, "\u200b", reply_markup={"remove_keyboard": True, "selective": False})
+            rm_id = rm.get("result", {}).get("message_id")
+            if rm_id: delete_msg(chat_id, rm_id)
             send_photo(chat_id, BANNER, WELCOME, reply_markup=kb_main_inline())
             send(chat_id, plans_text(), reply_markup=kb_plans())
             return
 
         if param == "profile":
+            rm = send(chat_id, "\u200b", reply_markup={"remove_keyboard": True, "selective": False})
+            rm_id = rm.get("result", {}).get("message_id")
+            if rm_id: delete_msg(chat_id, rm_id)
             send_photo(chat_id, BANNER, WELCOME, reply_markup=kb_main_inline())
             # Immediately show profile
             full_name = " ".join(filter(None, [
@@ -361,8 +367,11 @@ def _handle_message(msg: dict) -> None:
             )
             return
 
-        # Default start — remove any old reply keyboard, send welcome
-        send(chat_id, "\u200b", reply_markup={"remove_keyboard": True})
+        # Default start — delete lingering reply keyboard, then send welcome
+        rm = send(chat_id, "\u200b", reply_markup={"remove_keyboard": True, "selective": False})
+        rm_id = rm.get("result", {}).get("message_id")
+        if rm_id:
+            delete_msg(chat_id, rm_id)
         send_photo(chat_id, BANNER, WELCOME, reply_markup=kb_main_inline())
         return
 
