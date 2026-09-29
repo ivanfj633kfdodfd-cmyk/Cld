@@ -432,18 +432,37 @@ def api_requisites_text(pack_key: str, currency: str, usd: int | None = None,
 def plans_text() -> str:
     rows = []
     for key, plan in PLANS.items():
-        badge = f"  [{plan['badge']}]" if plan.get("badge") else ""
-        rows.append(f"{plan['label']}  —  ${plan['price_usd']}/mo{badge}")
-
-    listing = "\n".join(rows)
+        badge = f" [{plan['badge']}]" if plan.get("badge") else ""
+        rows.append(f"| **{plan['label']}** | ${plan['price_usd']}/mo{badge} |")
+    table = "\n".join(rows)
     return (
-        "<b>Claude — plans and pricing</b>\n\n"
-        "<pre>"
-        f"{listing}"
-        "</pre>\n\n"
-        "<i>Official plans · claude.com/pricing</i>\n\n"
-        "Select a plan:"
+        "# Claude — plans and pricing\n\n"
+        "| Plan | Price |\n"
+        "| :--- | :---: |\n"
+        f"{table}\n\n"
+        "---\n\n"
+        "*Official plans · [claude.com/pricing](https://claude.com/pricing)*"
     )
+
+
+def _send_plans_message(chat_id: int, reply_markup: dict) -> dict:
+    result = api("sendRichMessage",
+        chat_id=chat_id,
+        rich_message={"markdown": plans_text()},
+        reply_markup=reply_markup
+    )
+    if not result.get("ok"):
+        plain = "<b>Claude — plans and pricing</b>\n\n"
+        plain += "<pre>"
+        for key, plan in PLANS.items():
+            badge = f"  [{plan['badge']}]" if plan.get("badge") else ""
+            plain += f"{plan['label']}  —  ${plan['price_usd']}/mo{badge}\n"
+        plain += "</pre>\n\n<i>Official plans · claude.com/pricing</i>"
+        result = api("sendMessage",
+            chat_id=chat_id, text=plain,
+            parse_mode="HTML", reply_markup=reply_markup
+        )
+    return result
 
 
 def plan_detail_text(plan_key: str) -> str:
@@ -883,23 +902,68 @@ def _handle_callback(cb: dict) -> None:
 
     # Subscription flow
     if data == "subscribe":
-        replace(chat_id, msg_id, plans_text(), reply_markup=kb_plans())
+        delete_msg(chat_id, msg_id)
+        _send_plans_message(chat_id, kb_plans())
         return
 
     if data.startswith("plan:"):
         plan_key = data.split(":", 1)[1]
-        replace(chat_id, msg_id,
-            plan_detail_text(plan_key),
+        plan = PLANS[plan_key]
+        feats = "\n".join(f"| ✓ | {f} |" for f in plan["features"])
+        md = (
+            f"# {plan['label']} — ${plan['price_usd']}/mo\n\n"
+            f"{plan['desc']}\n\n"
+            "## Includes\n\n"
+            "| | Feature |\n"
+            "| :---: | :--- |\n"
+            f"{feats}\n\n"
+            "---\n\n"
+            "*Select payment currency:*"
+        )
+        result = api("sendRichMessage",
+            chat_id=chat_id,
+            rich_message={"markdown": md},
             reply_markup=kb_currencies(plan_key)
         )
+        if not result.get("ok"):
+            replace(chat_id, msg_id,
+                plan_detail_text(plan_key),
+                reply_markup=kb_currencies(plan_key)
+            )
+        else:
+            delete_msg(chat_id, msg_id)
         return
 
     if data.startswith("pay:"):
         _, plan_key, currency = data.split(":", 2)
-        replace(chat_id, msg_id,
-            requisites_text(plan_key, currency),
+        plan          = PLANS[plan_key]
+        wallet        = WALLETS[currency]
+        crypto_amount = format_crypto_amount(plan["price_usd"], currency)
+        md = (
+            "# Payment details\n\n"
+            "| | |\n"
+            "| :--- | :--- |\n"
+            f"| **Plan** | {plan['label']} |\n"
+            f"| **Amount** | `{crypto_amount}` |\n"
+            f"| **≈ USD** | ${plan['price_usd']} |\n"
+            f"| **Network** | {wallet['network']} |\n\n"
+            "**Wallet address:**\n\n"
+            f"`{wallet['address']}`\n\n"
+            "> Send only via the network shown above.\n"
+            "> After sending tap **\"I have paid\"**."
+        )
+        result = api("sendRichMessage",
+            chat_id=chat_id,
+            rich_message={"markdown": md},
             reply_markup=kb_paid(plan_key)
         )
+        if not result.get("ok"):
+            replace(chat_id, msg_id,
+                requisites_text(plan_key, currency),
+                reply_markup=kb_paid(plan_key)
+            )
+        else:
+            delete_msg(chat_id, msg_id)
         return
 
     if data.startswith("paid:"):

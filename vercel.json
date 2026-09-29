@@ -16,6 +16,10 @@
       "dest": "bot.py"
     },
     {
+      "src": "/prices",
+      "dest": "bot.py"
+    },
+    {
       "src": "/webapp/(.*)",
       "dest": "webapp/$1"
     },

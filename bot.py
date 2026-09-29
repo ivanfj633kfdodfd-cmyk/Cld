@@ -35,6 +35,29 @@ def webapp_config():
     return Response(js, status=200, mimetype="application/javascript")
 
 
+@app.route("/prices", methods=["GET"])
+def prices():
+    """Proxy Binance prices — avoids CORS issues from webapp."""
+    import httpx as _httpx, json as _json
+    symbols = {
+        "TRX": "TRXUSDT", "ETH": "ETHUSDT", "BNB": "BNBUSDT",
+        "BTC": "BTCUSDT", "SOL": "SOLUSDT", "TON": "TONUSDT",
+    }
+    result = {}
+    for ticker, sym in symbols.items():
+        try:
+            r = _httpx.get(
+                f"https://api.binance.com/api/v3/ticker/price?symbol={sym}",
+                timeout=4
+            )
+            result[ticker] = float(r.json()["price"])
+        except Exception:
+            pass
+    resp = Response(_json.dumps(result), status=200, mimetype="application/json")
+    resp.headers["Access-Control-Allow-Origin"] = "*"
+    return resp
+
+
 @app.route("/", methods=["GET"])
 def index():
     return Response("ok", status=200)

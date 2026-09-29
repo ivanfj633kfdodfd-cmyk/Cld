@@ -1644,29 +1644,36 @@ const WALLETS = [
   { name: 'TON',          network: 'TON',                 cgId: 'the-open-network', symbol: 'TON', rate: 4.8},
 ];
 
-// Fetch live prices from Binance (no key, no rate limit)
+// Fetch live prices — tries our own Vercel proxy first, then Binance direct
 async function fetchLivePrices(){
+  const host = window.location.origin; // https://cld-mu.vercel.app
   const pairs = [
-    ['TRX',  'TRXUSDT'],
-    ['ETH',  'ETHUSDT'],
-    ['BNB',  'BNBUSDT'],
-    ['BTC',  'BTCUSDT'],
-    ['SOL',  'SOLUSDT'],
-    ['TON',  'TONUSDT'],
+    ['TRX','TRXUSDT'],['ETH','ETHUSDT'],['BNB','BNBUSDT'],
+    ['BTC','BTCUSDT'],['SOL','SOLUSDT'],['TON','TONUSDT'],
   ];
+
+  // Try our proxy endpoint first (avoids CORS)
+  try {
+    const r = await fetch(`${host}/prices`, { signal: AbortSignal.timeout(5000) });
+    if(r.ok){
+      const data = await r.json();
+      WALLETS.forEach(w => {
+        if(data[w.symbol] != null) w.rate = data[w.symbol];
+      });
+      return;
+    }
+  } catch(e){}
+
+  // Fallback: direct Binance (may fail due to CORS in some clients)
   await Promise.allSettled(pairs.map(async ([ticker, sym]) => {
     try {
       const r = await fetch(
         `https://api.binance.com/api/v3/ticker/price?symbol=${sym}`,
-        { signal: AbortSignal.timeout(5000) }
+        { signal: AbortSignal.timeout(4000) }
       );
       const d = await r.json();
       const price = parseFloat(d.price);
-      if(price > 0){
-        WALLETS.forEach(w => {
-          if(w.symbol === ticker) w.rate = price;
-        });
-      }
+      if(price > 0) WALLETS.forEach(w => { if(w.symbol === ticker) w.rate = price; });
     } catch(e){}
   }));
 }
