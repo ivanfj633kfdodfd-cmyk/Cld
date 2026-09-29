@@ -1120,7 +1120,7 @@ body{
 </div>
 
 <!-- Currency selection sheet -->
-<div class="api-backdrop" id="currBackdrop" onclick="closeCurrSheet()" style="z-index:500;"></div>
+<div class="api-backdrop" id="currBackdrop2" onclick="closeCurrSheet()" style="z-index:500;"></div>
 <div class="curr-sheet" id="currSheet">
   <div class="sheet-handle"></div>
   <div class="curr-header">
@@ -1565,13 +1565,13 @@ function updateCalc(){
   document.getElementById('resTotal').textContent   = '$' + Math.round(usd);
 
   // disable pay if below min
-  const btn = document.getElementById('apiPayBtn');
+  const payBtn = document.getElementById('apiPayBtn');
   if(usd < API_MIN){
-    btn.disabled = true;
-    btn.textContent = `Minimum $${API_MIN}`;
+    payBtn.disabled = true;
+    payBtn.textContent = `Minimum $${API_MIN}`;
   } else {
-    btn.disabled = false;
-    btn.textContent = `Pay $${Math.round(usd)} with crypto`;
+    payBtn.disabled = false;
+    payBtn.textContent = `Pay $${Math.round(usd)} with crypto`;
   }
 }
 
@@ -1612,11 +1612,11 @@ function initCurrencyList(){
 }
 
 function openCurrencySheet(){
-  document.getElementById('currBackdrop').classList.add('open');
+  document.getElementById('currBackdrop2').classList.add('open');
   document.getElementById('currSheet').classList.add('open');
 }
 function closeCurrSheet(){
-  document.getElementById('currBackdrop').classList.remove('open');
+  document.getElementById('currBackdrop2').classList.remove('open');
   document.getElementById('currSheet').classList.remove('open');
 }
 
@@ -1624,17 +1624,22 @@ function selectCurrency(currency){
   closeCurrSheet();
   closeApiCalc();
 
-  // Get current amount
   const usd = apiMode === 'usd'
     ? Math.round(apiAmount)
     : Math.round(apiAmount * PRICE_PER_1M);
 
-  // Send to bot via deep link
   const botUsername = window.BOT_USERNAME || 'CIaudeRobot';
-  const param = `api_${usd}_${currency.replace(/[^a-zA-Z0-9]/g,'_')}`;
+  const currSlug    = currency.replace(/[^a-zA-Z0-9]/g,'_');
+  const param       = `api_${usd}_${currSlug}`;
+  const url         = `https://t.me/${botUsername}?start=${param}`;
+
   if(tg){
-    tg.openTelegramLink(`https://t.me/${botUsername}?start=${param}`);
-    setTimeout(()=>tg.close(), 300);
+    // openTelegramLink works for t.me links in Bot API 6.1+
+    tg.openTelegramLink(url);
+    // close webapp after short delay
+    setTimeout(()=>{ try{ tg.close(); }catch(e){} }, 400);
+  } else {
+    window.open(url, '_blank');
   }
 }
 </script>
