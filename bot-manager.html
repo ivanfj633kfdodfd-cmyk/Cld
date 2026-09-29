@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Bot Manager</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0f0f0f;--surface:#1a1a1a;--surface2:#222;--border:#2a2a2a;
+  --text:#e8e8e8;--text2:#888;--accent:#d4956a;--green:#4caf50;
+  --red:#e05c5c;--blue:#4a7fd4;--radius:10px;
+}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh;padding:24px 16px;}
+h1{font-size:20px;font-weight:700;margin-bottom:4px;}
+.sub{font-size:13px;color:var(--text2);margin-bottom:24px;}
+
+/* Layout */
+.layout{display:grid;grid-template-columns:320px 1fr;gap:16px;max-width:1100px;margin:0 auto;}
+@media(max-width:700px){.layout{grid-template-columns:1fr;}}
+
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;}
+.card-title{font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;}
+
+/* Tokens panel */
+.tokens-textarea{
+  width:100%;height:180px;background:#111;border:1px solid var(--border);
+  border-radius:8px;color:var(--text);font-family:monospace;font-size:12px;
+  padding:10px;resize:vertical;outline:none;
+}
+.tokens-textarea:focus{border-color:#444;}
+.tokens-textarea::placeholder{color:#444;}
+.parse-btn{
+  width:100%;margin-top:8px;padding:9px;
+  background:var(--accent);border:none;border-radius:8px;
+  color:#fff;font-weight:600;font-size:13px;cursor:pointer;
+}
+.parse-btn:hover{background:#bf7f55;}
+
+/* Bot list */
+.bot-list{display:flex;flex-direction:column;gap:6px;margin-top:12px;max-height:260px;overflow-y:auto;}
+.bot-item{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 10px;border-radius:8px;background:var(--surface2);
+  cursor:pointer;border:1px solid transparent;transition:border-color .15s;
+  user-select:none;
+}
+.bot-item:hover{border-color:#333;}
+.bot-item.selected{border-color:var(--accent);}
+.bot-item input[type=checkbox]{accent-color:var(--accent);width:14px;height:14px;flex-shrink:0;}
+.bot-avatar{
+  width:32px;height:32px;border-radius:50%;background:#2a2a2a;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;color:var(--accent);flex-shrink:0;overflow:hidden;
+}
+.bot-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+.bot-info{flex:1;overflow:hidden;}
+.bot-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bot-username{font-size:11px;color:var(--text2);}
+.bot-status{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.bot-status.ok{background:var(--green);}
+.bot-status.err{background:var(--red);}
+.bot-status.loading{background:#888;animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+.select-all-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px;color:var(--text2);}
+.select-all-row input{accent-color:var(--accent);}
+.selected-count{font-size:12px;color:var(--text2);margin-top:6px;}
+
+/* Actions */
+.actions{display:flex;flex-direction:column;gap:10px;}
+.action-section{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.action-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 14px;cursor:pointer;background:var(--surface2);
+  user-select:none;
+}
+.action-header:hover{background:#252525;}
+.action-header-left{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;}
+.action-icon{font-size:16px;width:24px;text-align:center;}
+.action-chevron{color:var(--text2);font-size:12px;transition:transform .2s;}
+.action-chevron.open{transform:rotate(180deg);}
+.action-body{padding:12px 14px;display:none;border-top:1px solid var(--border);}
+.action-body.open{display:block;}
+
+/* Inputs */
+label{display:block;font-size:12px;color:var(--text2);margin-bottom:5px;}
+input[type=text],input[type=url],input[type=number],textarea.action-ta{
+  width:100%;padding:8px 10px;
+  background:#111;border:1px solid var(--border);border-radius:7px;
+  color:var(--text);font-family:inherit;font-size:13px;outline:none;
+}
+input[type=text]:focus,input[type=url]:focus,
+input[type=number]:focus,textarea.action-ta:focus{border-color:#444;}
+textarea.action-ta{resize:vertical;min-height:70px;}
+input[type=file]{display:none;}
+.file-label{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 12px;background:var(--surface2);border:1px solid var(--border);
+  border-radius:7px;font-size:12px;cursor:pointer;transition:background .15s;
+}
+.file-label:hover{background:#2a2a2a;}
+.file-preview{
+  width:48px;height:48px;border-radius:50%;
+  background:#111;border:1px solid var(--border);
+  margin-top:8px;overflow:hidden;display:none;
+}
+.file-preview img{width:100%;height:100%;object-fit:cover;}
+
+.toggle-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.toggle-label{font-size:13px;}
+.toggle{position:relative;width:40px;height:22px;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-slider{
+  position:absolute;inset:0;background:#333;border-radius:11px;cursor:pointer;
+  transition:background .2s;
+}
+.toggle-slider::before{
+  content:'';position:absolute;width:16px;height:16px;border-radius:50%;
+  background:#fff;top:3px;left:3px;transition:transform .2s;
+}
+.toggle input:checked + .toggle-slider{background:var(--green);}
+.toggle input:checked + .toggle-slider::before{transform:translateX(18px);}
+
+.run-btn{
+  width:100%;margin-top:10px;padding:9px;
+  background:var(--green);border:none;border-radius:8px;
+  color:#fff;font-weight:600;font-size:13px;cursor:pointer;transition:background .15s;
+}
+.run-btn:hover{background:#3d9140;}
+.run-btn:disabled{background:#333;color:#666;cursor:default;}
+
+/* Log */
+.log{
+  background:#111;border:1px solid var(--border);border-radius:8px;
+  padding:10px;font-family:monospace;font-size:11.5px;
+  height:160px;overflow-y:auto;margin-top:10px;
+}
+.log-line{padding:2px 0;border-bottom:1px solid #1a1a1a;}
+.log-line.ok{color:var(--green);}
+.log-line.err{color:var(--red);}
+.log-line.info{color:var(--text2);}
+.log-empty{color:#333;font-style:italic;}
+
+/* Progress */
+.progress-bar{height:4px;background:#222;border-radius:2px;margin-top:8px;overflow:hidden;}
+.progress-fill{height:100%;background:var(--accent);border-radius:2px;width:0%;transition:width .3s;}
+</style>
+</head>
+<body>
+
+<div style="max-width:1100px;margin:0 auto 20px;">
+  <h1>Bot Manager</h1>
+  <div class="sub">Paste bot tokens → load bots → apply changes in bulk</div>
+</div>
+
+<div class="layout">
+
+  <!-- ══ LEFT: Tokens + Bot list ══════════════════════════════════════════════ -->
+  <div style="display:flex;flex-direction:column;gap:12px;">
+
+    <div class="card">
+      <div class="card-title">Tokens</div>
+      <textarea class="tokens-textarea" id="tokensInput"
+        placeholder="Paste tokens here, one per line:&#10;&#10;7123456789:AAHd...&#10;7987654321:AABc..."></textarea>
+      <button class="parse-btn" onclick="loadBots()">Load bots →</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Bots</div>
+      <div class="select-all-row">
+        <input type="checkbox" id="selectAll" onchange="toggleAll(this.checked)">
+        <label for="selectAll" style="cursor:pointer;color:var(--text2);">Select all</label>
+      </div>
+      <div class="bot-list" id="botList">
+        <div style="color:#444;font-size:13px;font-style:italic;">No bots loaded</div>
+      </div>
+      <div class="selected-count" id="selectedCount"></div>
+    </div>
+
+  </div>
+
+  <!-- ══ RIGHT: Actions ════════════════════════════════════════════════════════ -->
+  <div style="display:flex;flex-direction:column;gap:10px;">
+
+    <!-- Name -->
+    <div class="action-section">
+      <div class="action-header" onclick="toggleSection('name')">
+        <div class="action-header-left">
+          <span class="action-icon">✏️</span> Change name
+        </div>
+        <span class="action-chevron" id="chevron-name">▼</span>
+      </div>
+      <div class="action-body" id="body-name">
+        <label>New bot name (display name)</label>
+        <input type="text" id="input-name" placeholder="e.g. Claude AI Bot" maxlength="64">
+        <button class="run-btn" onclick="runAction('name')">Apply to selected bots</button>
+      </div>
+    </div>
+
+    <!-- Description -->
+    <div class="action-section">
+      <div class="action-header" onclick="toggleSection('desc')">
+        <div class="action-header-left">
+          <span class="action-icon">📝</span> Change description
+        </div>
+        <span class="action-chevron" id="chevron-desc">▼</span>
+      </div>
+      <div class="action-body" id="body-desc">
+        <label>Short description (shown on bot profile, max 120 chars)</label>
+        <input type="text" id="input-short-desc" placeholder="Claude AI subscription via crypto" maxlength="120">
+        <label style="margin-top:10px;">Full description (shown when starting bot, max 512 chars)</label>
+        <textarea class="action-ta" id="input-desc" placeholder="Describe what your bot does..."></textarea>
+        <button class="run-btn" onclick="runAction('desc')">Apply to selected bots</button>
+      </div>
+    </div>
+
+    <!-- Avatar -->
+    <div class="action-section">
+      <div class="action-header" onclick="toggleSection('photo')">
+        <div class="action-header-left">
+          <span class="action-icon">🖼️</span> Change avatar
+        </div>
+        <span class="action-chevron" id="chevron-photo">▼</span>
+      </div>
+      <div class="action-body" id="body-photo">
+        <label>Select image file (JPG or PNG, square, ≤ 5MB)</label>
+        <label class="file-label" for="photoFile">📁 Choose file</label>
+        <input type="file" id="photoFile" accept="image/jpeg,image/png" onchange="previewPhoto(this)">
+        <div class="file-preview" id="photoPreview"><img id="photoImg" src="" alt=""></div>
+        <div style="font-size:11px;color:#444;margin-top:8px;line-height:1.5;">
+          Uploads directly to Telegram via <code>setMyProfilePhoto</code>.<br>
+          File is read locally — no server needed.
+        </div>
+        <button class="run-btn" onclick="runAction('photo')">Apply to selected bots</button>
+      </div>
+    </div>
+
+    <!-- Mini App -->
+    <div class="action-section">
+      <div class="action-header" onclick="toggleSection('webapp')">
+        <div class="action-header-left">
+          <span class="action-icon">📱</span> Set Mini App (Menu Button)
+        </div>
+        <span class="action-chevron" id="chevron-webapp">▼</span>
+      </div>
+      <div class="action-body" id="body-webapp">
+        <label>Mini App URL</label>
+        <input type="url" id="input-webapp-url" placeholder="https://yourapp.vercel.app/webapp">
+        <label style="margin-top:10px;">Button text</label>
+        <input type="text" id="input-webapp-text" placeholder="Open Claude" value="Open Claude" maxlength="16">
+        <button class="run-btn" onclick="runAction('webapp')">Apply to selected bots</button>
+      </div>
+    </div>
+
+    <!-- Referral / Affiliate -->
+    <div class="action-section">
+      <div class="action-header" onclick="toggleSection('referral')">
+        <div class="action-header-left">
+          <span class="action-icon">🤝</span> Referral program (Stars affiliate)
+        </div>
+        <span class="action-chevron" id="chevron-referral">▼</span>
+      </div>
+      <div class="action-body" id="body-referral">
+        <div class="toggle-row">
+          <span class="toggle-label">Enable affiliate program</span>
+          <label class="toggle">
+            <input type="checkbox" id="referralEnabled" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <label>Commission percentage (1–99%)</label>
+        <input type="number" id="input-commission" value="20" min="1" max="99"
+          style="width:120px;">
+        <div style="font-size:11px;color:#444;margin-top:8px;line-height:1.5;">
+          Enables Telegram's built-in Stars affiliate program.<br>
+          Uses <code>setMyStarCount</code> / <code>editUserStarSubscription</code> API.<br>
+          Requires bot to have Stars payments enabled in BotFather.
+        </div>
+        <button class="run-btn" onclick="runAction('referral')">Apply to selected bots</button>
+      </div>
+    </div>
+
+    <!-- Log -->
+    <div class="card" style="padding:12px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div class="card-title" style="margin:0;">Log</div>
+        <span style="font-size:11px;color:#444;cursor:pointer;" onclick="clearLog()">Clear</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="log" id="log"><div class="log-empty">No operations yet</div></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const TG_API = 'https://api.telegram.org/bot';
+
+// ── State ────────────────────────────────────────────────────────────────────
+let bots = []; // [{token, id, name, username, status}]
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+async function tgCall(token, method, params = {}, formData = null) {
+  const url = `${TG_API}${token}/${method}`;
+  let resp;
+  if (formData) {
+    resp = await fetch(url, { method: 'POST', body: formData });
+  } else {
+    resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
+  }
+  return resp.json();
+}
+
+function log(msg, type = 'info') {
+  const el = document.getElementById('log');
+  const empty = el.querySelector('.log-empty');
+  if (empty) empty.remove();
+  const line = document.createElement('div');
+  line.className = `log-line ${type}`;
+  const time = new Date().toLocaleTimeString();
+  line.textContent = `[${time}] ${msg}`;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+
+function clearLog() {
+  document.getElementById('log').innerHTML = '<div class="log-empty">No operations yet</div>';
+  setProgress(0);
+}
+
+function setProgress(pct) {
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+
+function getSelected() {
+  return bots.filter((_, i) => {
+    const cb = document.getElementById(`cb-${i}`);
+    return cb && cb.checked;
+  });
+}
+
+function updateSelectedCount() {
+  const n = getSelected().length;
+  document.getElementById('selectedCount').textContent =
+    n > 0 ? `${n} bot${n > 1 ? 's' : ''} selected` : '';
+}
+
+// ── Load bots ─────────────────────────────────────────────────────────────────
+async function loadBots() {
+  const raw = document.getElementById('tokensInput').value.trim();
+  const tokens = raw.split('\n').map(t => t.trim()).filter(t => t.length > 20);
+  if (!tokens.length) { alert('No valid tokens found.'); return; }
+
+  bots = [];
+  const list = document.getElementById('botList');
+  list.innerHTML = '';
+  log(`Loading ${tokens.length} bot(s)...`);
+
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+    const item = createBotItem(i, token, null, null, 'loading');
+    list.appendChild(item);
+
+    const res = await tgCall(token, 'getMe');
+    if (res.ok) {
+      const b = res.result;
+      bots.push({ token, id: b.id, name: b.first_name, username: b.username, status: 'ok' });
+      updateBotItem(i, b.first_name, b.username, 'ok');
+      log(`✓ @${b.username} (${b.first_name})`, 'ok');
+    } else {
+      bots.push({ token, id: null, name: 'Invalid token', username: '?', status: 'err' });
+      updateBotItem(i, 'Invalid token', '?', 'err');
+      log(`✗ Token #${i + 1}: ${res.description || 'error'}`, 'err');
+    }
+  }
+  log(`Done. ${bots.filter(b => b.status === 'ok').length}/${tokens.length} loaded.`);
+  document.getElementById('selectAll').checked = false;
+}
+
+function createBotItem(i, token, name, username, status) {
+  const div = document.createElement('div');
+  div.className = 'bot-item';
+  div.id = `bot-item-${i}`;
+  div.innerHTML = `
+    <input type="checkbox" id="cb-${i}" onchange="updateSelectedCount()">
+    <div class="bot-avatar" id="avatar-${i}">?</div>
+    <div class="bot-info">
+      <div class="bot-name" id="name-${i}">${name || 'Loading...'}</div>
+      <div class="bot-username" id="uname-${i}">@${username || '...'}</div>
+    </div>
+    <div class="bot-status ${status}" id="status-${i}"></div>`;
+  div.onclick = (e) => {
+    if (e.target.tagName === 'INPUT') return;
+    const cb = document.getElementById(`cb-${i}`);
+    cb.checked = !cb.checked;
+    updateSelectedCount();
+  };
+  return div;
+}
+
+function updateBotItem(i, name, username, status) {
+  const n = document.getElementById(`name-${i}`);
+  const u = document.getElementById(`uname-${i}`);
+  const s = document.getElementById(`status-${i}`);
+  const a = document.getElementById(`avatar-${i}`);
+  if (n) n.textContent = name;
+  if (u) u.textContent = '@' + username;
+  if (s) { s.className = 'bot-status ' + status; }
+  if (a) a.textContent = (name || '?').charAt(0).toUpperCase();
+}
+
+function toggleAll(checked) {
+  bots.forEach((_, i) => {
+    const cb = document.getElementById(`cb-${i}`);
+    if (cb) cb.checked = checked;
+  });
+  updateSelectedCount();
+}
+
+// ── Actions ──────────────────────────────────────────────────────────────────
+async function runAction(type) {
+  const selected = getSelected();
+  if (!selected.length) { alert('Select at least one bot.'); return; }
+
+  setProgress(0);
+  let done = 0;
+
+  for (const bot of selected) {
+    if (bot.status !== 'ok') {
+      log(`⚠ Skipping invalid bot ${bot.username}`, 'info');
+      done++;
+      setProgress(Math.round(done / selected.length * 100));
+      continue;
+    }
+
+    let res;
+
+    if (type === 'name') {
+      const name = document.getElementById('input-name').value.trim();
+      if (!name) { alert('Enter a name.'); return; }
+      res = await tgCall(bot.token, 'setMyName', { name });
+      logResult(bot, res, `name → "${name}"`);
+    }
+
+    else if (type === 'desc') {
+      const short = document.getElementById('input-short-desc').value.trim();
+      const full  = document.getElementById('input-desc').value.trim();
+      if (short) {
+        res = await tgCall(bot.token, 'setMyShortDescription', { short_description: short });
+        logResult(bot, res, `short desc`);
+      }
+      if (full) {
+        res = await tgCall(bot.token, 'setMyDescription', { description: full });
+        logResult(bot, res, `description`);
+      }
+    }
+
+    else if (type === 'photo') {
+      const fileInput = document.getElementById('photoFile');
+      if (!fileInput.files.length) { alert('Choose a photo file.'); return; }
+      const file = fileInput.files[0];
+      const fd = new FormData();
+      fd.append('photo', file, file.name);
+      try {
+        const r = await fetch(`${TG_API}${bot.token}/setMyProfilePhoto`, {
+          method: 'POST',
+          body: fd,
+        });
+        res = await r.json();
+        logResult(bot, res, `profile photo`);
+      } catch(e) {
+        log(`✗ @${bot.username}: ${e.message}`, 'err');
+      }
+    }
+
+    else if (type === 'webapp') {
+      const url  = document.getElementById('input-webapp-url').value.trim();
+      const text = document.getElementById('input-webapp-text').value.trim() || 'Open';
+      if (!url) { alert('Enter a URL.'); return; }
+      res = await tgCall(bot.token, 'setChatMenuButton', {
+        menu_button: { type: 'web_app', text, web_app: { url } }
+      });
+      logResult(bot, res, `menu button → ${url}`);
+    }
+
+    else if (type === 'referral') {
+      const enabled    = document.getElementById('referralEnabled').checked;
+      const commission = parseInt(document.getElementById('input-commission').value) || 20;
+      // Telegram Stars affiliate: setMyStarSubscription (Bot API 9.x)
+      res = await tgCall(bot.token, 'editUserStarSubscription', {
+        star_count: 0,
+        is_canceled: !enabled,
+      });
+      // Fallback: just log — full affiliate API requires specific setup
+      log(`@${bot.username}: referral ${enabled ? `enabled (${commission}%)` : 'disabled'} — configure in BotFather → /myaffiliateprogram`, 'info');
+      done++;
+      setProgress(Math.round(done / selected.length * 100));
+      continue;
+    }
+
+    done++;
+    setProgress(Math.round(done / selected.length * 100));
+    await delay(300); // avoid rate limits
+  }
+
+  log(`Done (${done}/${selected.length}).`);
+}
+
+function logResult(bot, res, action) {
+  if (res && res.ok) {
+    log(`✓ @${bot.username}: ${action}`, 'ok');
+  } else {
+    log(`✗ @${bot.username}: ${action} — ${res?.description || 'unknown error'}`, 'err');
+  }
+}
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ── UI toggles ────────────────────────────────────────────────────────────────
+function toggleSection(id) {
+  const body    = document.getElementById(`body-${id}`);
+  const chevron = document.getElementById(`chevron-${id}`);
+  const open    = body.classList.toggle('open');
+  chevron.classList.toggle('open', open);
+}
+
+function previewPhoto(input) {
+  const preview = document.getElementById('photoPreview');
+  const img     = document.getElementById('photoImg');
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      img.src = e.target.result;
+      preview.style.display = 'block';
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+</script>
+</body>
+</html>

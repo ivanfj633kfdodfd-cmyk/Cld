@@ -640,7 +640,7 @@ body{
 <!-- ══ INPUT ═════════════════════════════════════════════════════════════════ -->
 <div class="input-area">
   <div class="input-upgrade">
-    Free plan · <a href="#" onclick="openPaywall();return false;">Upgrade to Pro</a>
+    Free plan · <a href="#" onclick="openPaywall();return false;">Upgrade</a> · <a href="#" onclick="openApiCalc();return false;">API Key</a>
   </div>
   <div class="input-box">
     <div class="input-row">
@@ -899,6 +899,236 @@ body{
   <div class="chats-empty">
     <div style="font-size:13px;color:#444;">No chats yet</div>
     <div style="font-size:12px;color:#333;margin-top:4px;">Subscribe to save chat history</div>
+  </div>
+</div>
+
+<!-- ══ API CALCULATOR SHEET ══════════════════════════════════════════════════ -->
+<style>
+/* ── API Sheet ── */
+.api-backdrop{
+  position:fixed;inset:0;z-index:400;
+  background:rgba(0,0,0,.55);
+  opacity:0;pointer-events:none;transition:opacity .2s;
+}
+.api-backdrop.open{opacity:1;pointer-events:all;}
+.api-sheet{
+  position:fixed;bottom:0;left:0;right:0;z-index:401;
+  background:#1a1a1a;border-radius:20px 20px 0 0;
+  padding:0 0 calc(28px + env(safe-area-inset-bottom));
+  transform:translateY(100%);
+  transition:transform .25s cubic-bezier(.4,0,.2,1);
+  max-height:90vh;overflow-y:auto;
+}
+.api-sheet.open{transform:translateY(0);}
+.api-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 20px 10px;position:sticky;top:0;background:#1a1a1a;z-index:1;
+}
+.api-title{font-size:17px;font-weight:700;}
+.api-close{
+  width:30px;height:30px;border-radius:50%;
+  background:#252525;border:none;color:#888;font-size:16px;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+}
+.api-body{padding:0 20px 8px;}
+
+/* Mode toggle */
+.api-mode{
+  display:flex;background:#111;border-radius:10px;
+  padding:3px;margin-bottom:20px;
+}
+.api-mode-btn{
+  flex:1;padding:8px;border:none;border-radius:8px;
+  background:transparent;color:#666;font-size:13px;
+  font-weight:600;cursor:pointer;transition:all .15s;
+  font-family:inherit;
+}
+.api-mode-btn.active{background:#2a2a2a;color:#e8e8e8;}
+
+/* Slider area */
+.api-slider-label{
+  display:flex;justify-content:space-between;align-items:baseline;
+  margin-bottom:8px;
+}
+.api-slider-main{font-size:28px;font-weight:700;color:#e8e8e8;}
+.api-slider-main span{font-size:16px;font-weight:400;color:#888;margin-left:4px;}
+.api-slider-sub{font-size:13px;color:#888;}
+
+/* Custom range slider */
+.api-range{
+  -webkit-appearance:none;appearance:none;
+  width:100%;height:4px;border-radius:2px;
+  background:linear-gradient(to right,#d4956a 0%,#d4956a var(--pct,50%),#2a2a2a var(--pct,50%),#2a2a2a 100%);
+  outline:none;margin:12px 0 4px;cursor:pointer;
+}
+.api-range::-webkit-slider-thumb{
+  -webkit-appearance:none;width:22px;height:22px;border-radius:50%;
+  background:#d4956a;cursor:pointer;border:3px solid #1a1a1a;
+  box-shadow:0 0 0 1px #d4956a;
+}
+.api-range::-moz-range-thumb{
+  width:22px;height:22px;border-radius:50%;
+  background:#d4956a;cursor:pointer;border:3px solid #1a1a1a;
+}
+.api-range-limits{
+  display:flex;justify-content:space-between;
+  font-size:11px;color:#444;
+}
+
+/* Custom input */
+.api-custom-row{
+  display:flex;align-items:center;gap:8px;margin:12px 0;
+}
+.api-custom-input{
+  flex:1;background:#111;border:1px solid #2a2a2a;border-radius:8px;
+  padding:10px 12px;color:#e8e8e8;font-size:18px;font-weight:600;
+  font-family:inherit;outline:none;
+}
+.api-custom-input:focus{border-color:#444;}
+.api-custom-unit{font-size:14px;color:#888;flex-shrink:0;}
+
+/* Result box */
+.api-result{
+  background:#111;border:1px solid #2a2a2a;border-radius:12px;
+  padding:14px 16px;margin:16px 0;
+}
+.api-result-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:4px 0;font-size:14px;
+}
+.api-result-row .lbl{color:#666;}
+.api-result-row .val{color:#e8e8e8;font-weight:500;}
+.api-result-row.total .val{color:#d4956a;font-size:16px;font-weight:700;}
+.api-result-sep{height:1px;background:#1e1e1e;margin:6px 0;}
+
+/* Presets */
+.api-presets{display:flex;gap:6px;margin:12px 0;}
+.api-preset{
+  flex:1;padding:8px 4px;background:#111;border:1px solid #2a2a2a;
+  border-radius:8px;font-size:12px;color:#888;text-align:center;
+  cursor:pointer;transition:all .15s;font-family:inherit;
+}
+.api-preset:hover,.api-preset.active{background:#2a2a2a;color:#e8e8e8;border-color:#444;}
+
+.api-pay-btn{
+  width:100%;padding:14px;
+  background:#d4956a;border:none;border-radius:12px;
+  color:#fff;font-size:15px;font-weight:700;
+  cursor:pointer;margin-top:4px;
+  -webkit-tap-highlight-color:transparent;
+}
+.api-pay-btn:active{background:#bf7f55;}
+.api-pay-btn:disabled{background:#333;color:#666;}
+
+/* Currency sheet */
+.curr-sheet{
+  position:fixed;bottom:0;left:0;right:0;z-index:501;
+  background:#1a1a1a;border-radius:20px 20px 0 0;
+  padding:0 0 calc(24px + env(safe-area-inset-bottom));
+  transform:translateY(100%);
+  transition:transform .25s cubic-bezier(.4,0,.2,1);
+  max-height:75vh;overflow-y:auto;
+}
+.curr-sheet.open{transform:translateY(0);}
+.curr-header{padding:16px 20px 8px;display:flex;align-items:center;justify-content:space-between;}
+.curr-title{font-size:16px;font-weight:600;}
+.curr-close{width:28px;height:28px;border-radius:50%;background:#252525;border:none;color:#888;font-size:15px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.curr-item{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:13px 20px;font-size:15px;color:#e8e8e8;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+}
+.curr-item:active{background:#222;}
+.curr-item .curr-network{font-size:11px;color:#555;margin-top:1px;}
+.curr-sep{height:1px;background:#222;margin:0 20px;}
+</style>
+
+<div class="api-backdrop" id="apiBackdrop" onclick="closeApiCalc()"></div>
+<div class="api-sheet" id="apiSheet">
+  <div class="api-header">
+    <span class="api-title">API Tokens</span>
+    <button class="api-close" onclick="closeApiCalc()">✕</button>
+  </div>
+  <div class="api-body">
+
+    <!-- Mode toggle: $ ↔ tokens -->
+    <div class="api-mode">
+      <button class="api-mode-btn active" id="modeUsd"   onclick="setApiMode('usd')">$ Dollars → Tokens</button>
+      <button class="api-mode-btn"        id="modeToken" onclick="setApiMode('token')">Tokens → $</button>
+    </div>
+
+    <!-- Slider display -->
+    <div class="api-slider-label">
+      <div>
+        <div class="api-slider-main" id="sliderMain">$100<span id="sliderUnit"></span></div>
+        <div class="api-slider-sub"  id="sliderSub">≈ 12.5M tokens</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:11px;color:#555;">Sonnet 5 blended</div>
+        <div style="font-size:11px;color:#555;">$8 / 1M tokens</div>
+      </div>
+    </div>
+
+    <input type="range" class="api-range" id="apiSlider"
+      min="100" max="1000" step="10" value="100"
+      oninput="onSlider(this)">
+    <div class="api-range-limits">
+      <span id="rangeMin">$100</span>
+      <span id="rangeMax">$1000</span>
+    </div>
+
+    <!-- Presets -->
+    <div class="api-presets">
+      <button class="api-preset active" id="preset100" onclick="setPreset(100)">$100</button>
+      <button class="api-preset"        id="preset200" onclick="setPreset(200)">$200</button>
+      <button class="api-preset"        id="preset500" onclick="setPreset(500)">$500</button>
+      <button class="api-preset"        id="presetCustom" onclick="focusCustom()">Custom</button>
+    </div>
+
+    <!-- Custom input -->
+    <div class="api-custom-row">
+      <input type="number" class="api-custom-input" id="apiCustomInput"
+        placeholder="100" min="100" oninput="onCustomInput(this)">
+      <span class="api-custom-unit" id="customUnit">USD</span>
+    </div>
+
+    <!-- Result -->
+    <div class="api-result">
+      <div class="api-result-row">
+        <span class="lbl">Tokens</span>
+        <span class="val" id="resTokens">12.5M</span>
+      </div>
+      <div class="api-result-row">
+        <span class="lbl">Sonnet 5 chats</span>
+        <span class="val" id="resChats">~25 000</span>
+      </div>
+      <div class="api-result-row">
+        <span class="lbl">Coding sessions</span>
+        <span class="val" id="resCoding">~625</span>
+      </div>
+      <div class="api-result-sep"></div>
+      <div class="api-result-row total">
+        <span class="lbl">Total</span>
+        <span class="val" id="resTotal">$100</span>
+      </div>
+    </div>
+
+    <button class="api-pay-btn" id="apiPayBtn" onclick="openCurrencySheet()">
+      Pay with crypto
+    </button>
+  </div>
+</div>
+
+<!-- Currency selection sheet -->
+<div class="api-backdrop" id="currBackdrop" onclick="closeCurrSheet()" style="z-index:500;"></div>
+<div class="curr-sheet" id="currSheet">
+  <div class="sheet-handle"></div>
+  <div class="curr-header">
+    <span class="curr-title">Choose currency</span>
+    <button class="curr-close" onclick="closeCurrSheet()">✕</button>
+  </div>
+  <div id="currList">
+    <!-- populated by JS -->
   </div>
 </div>
 
@@ -1196,7 +1426,217 @@ function goPay(plan){
 /* ══════════════════════ INIT ══════════════════════════════════════════════ */
 window.addEventListener('DOMContentLoaded', ()=>{
   initPin();
+  initCurrencyList();
 });
+
+/* ══════════════════════ API CALCULATOR ════════════════════════════════════ */
+const PRICE_PER_1M = 8.0;   // USD per 1M tokens
+const API_MIN      = 100;
+
+let apiMode    = 'usd';   // 'usd' | 'token'
+let apiAmount  = 100;     // current value (USD or tokens M depending on mode)
+
+function openApiCalc(){
+  document.getElementById('apiBackdrop').classList.add('open');
+  document.getElementById('apiSheet').classList.add('open');
+  updateCalc();
+}
+function closeApiCalc(){
+  document.getElementById('apiBackdrop').classList.remove('open');
+  document.getElementById('apiSheet').classList.remove('open');
+}
+
+function setApiMode(mode){
+  apiMode = mode;
+  document.getElementById('modeUsd').classList.toggle('active',   mode==='usd');
+  document.getElementById('modeToken').classList.toggle('active', mode==='token');
+
+  const slider = document.getElementById('apiSlider');
+  if(mode === 'usd'){
+    slider.min   = 100;
+    slider.max   = 1000;
+    slider.step  = 10;
+    slider.value = Math.max(100, apiAmount);
+    document.getElementById('rangeMin').textContent = '$100';
+    document.getElementById('rangeMax').textContent = '$1000';
+    document.getElementById('customUnit').textContent = 'USD';
+  } else {
+    // token mode: slider in millions, 12.5M — 125M
+    slider.min   = 12.5;
+    slider.max   = 125;
+    slider.step  = 1;
+    slider.value = 12.5;
+    document.getElementById('rangeMin').textContent = '12.5M';
+    document.getElementById('rangeMax').textContent = '125M';
+    document.getElementById('customUnit').textContent = 'M tokens';
+  }
+  apiAmount = parseFloat(slider.value);
+  document.getElementById('apiCustomInput').value = '';
+  updateCalc();
+}
+
+function onSlider(el){
+  apiAmount = parseFloat(el.value);
+  document.getElementById('apiCustomInput').value = '';
+  updatePresetBtns(apiMode === 'usd' ? apiAmount : null);
+  updateSliderTrack(el);
+  updateCalc();
+}
+
+function onCustomInput(el){
+  const v = parseFloat(el.value);
+  if(!isNaN(v) && v > 0){
+    apiAmount = v;
+    // sync slider if in range
+    const slider = document.getElementById('apiSlider');
+    const mn = parseFloat(slider.min), mx = parseFloat(slider.max);
+    if(v >= mn && v <= mx){ slider.value = v; updateSliderTrack(slider); }
+    updatePresetBtns(null);
+    updateCalc();
+  }
+}
+
+function updateSliderTrack(el){
+  const mn = parseFloat(el.min), mx = parseFloat(el.max);
+  const pct = ((parseFloat(el.value) - mn) / (mx - mn) * 100).toFixed(1);
+  el.style.setProperty('--pct', pct + '%');
+}
+
+function setPreset(usd){
+  apiMode = 'usd';
+  document.getElementById('modeUsd').classList.add('active');
+  document.getElementById('modeToken').classList.remove('active');
+  apiAmount = usd;
+  const slider = document.getElementById('apiSlider');
+  slider.min = 100; slider.max = 1000; slider.step = 10; slider.value = usd;
+  updateSliderTrack(slider);
+  document.getElementById('apiCustomInput').value = '';
+  updatePresetBtns(usd);
+  updateCalc();
+}
+
+function focusCustom(){
+  updatePresetBtns(null);
+  document.getElementById('apiCustomInput').focus();
+}
+
+function updatePresetBtns(activeUsd){
+  [100,200,500].forEach(v=>{
+    document.getElementById(`preset${v}`).classList.toggle('active', activeUsd===v);
+  });
+  document.getElementById('presetCustom').classList.toggle('active',
+    ![100,200,500].includes(activeUsd));
+}
+
+function updateCalc(){
+  let usd, tokensM;
+  if(apiMode === 'usd'){
+    usd     = Math.max(API_MIN, apiAmount);
+    tokensM = usd / PRICE_PER_1M;
+  } else {
+    tokensM = Math.max(API_MIN / PRICE_PER_1M, apiAmount);
+    usd     = tokensM * PRICE_PER_1M;
+  }
+
+  const chats  = Math.round(tokensM * 1e6 / 500);
+  const coding = Math.round(tokensM * 1e6 / 20000);
+
+  const fmtTokens = tokensM >= 1000
+    ? (tokensM/1000).toFixed(1) + 'B'
+    : tokensM >= 1
+      ? tokensM.toFixed(1) + 'M'
+      : (tokensM*1000).toFixed(0) + 'K';
+
+  if(apiMode === 'usd'){
+    document.getElementById('sliderMain').innerHTML =
+      `$${Math.round(usd)}<span></span>`;
+    document.getElementById('sliderSub').textContent =
+      `≈ ${fmtTokens} tokens`;
+  } else {
+    document.getElementById('sliderMain').innerHTML =
+      `${fmtTokens}<span> tokens</span>`;
+    document.getElementById('sliderSub').textContent =
+      `≈ $${Math.round(usd)}`;
+  }
+
+  document.getElementById('resTokens').textContent  = fmtTokens;
+  document.getElementById('resChats').textContent   = '~' + chats.toLocaleString();
+  document.getElementById('resCoding').textContent  = '~' + coding.toLocaleString();
+  document.getElementById('resTotal').textContent   = '$' + Math.round(usd);
+
+  // disable pay if below min
+  const btn = document.getElementById('apiPayBtn');
+  if(usd < API_MIN){
+    btn.disabled = true;
+    btn.textContent = `Minimum $${API_MIN}`;
+  } else {
+    btn.disabled = false;
+    btn.textContent = `Pay $${Math.round(usd)} with crypto`;
+  }
+}
+
+/* ══════════════════════ CURRENCY SHEET ════════════════════════════════════ */
+const WALLETS = [
+  { name: 'USDT TRC-20',  network: 'TRON (TRC-20)' },
+  { name: 'USDT ERC-20',  network: 'Ethereum (ERC-20)' },
+  { name: 'USDC ERC-20',  network: 'Ethereum (ERC-20)' },
+  { name: 'TRX',          network: 'TRON' },
+  { name: 'ETH',          network: 'Ethereum' },
+  { name: 'BNB',          network: 'BNB Smart Chain' },
+  { name: 'BTC',          network: 'Bitcoin' },
+  { name: 'SOL',          network: 'Solana' },
+  { name: 'TON',          network: 'TON' },
+];
+
+function initCurrencyList(){
+  const list = document.getElementById('currList');
+  WALLETS.forEach((w, i) => {
+    if(i > 0){
+      const sep = document.createElement('div');
+      sep.className = 'curr-sep';
+      list.appendChild(sep);
+    }
+    const item = document.createElement('div');
+    item.className = 'curr-item';
+    item.innerHTML = `
+      <div>
+        <div>${w.name}</div>
+        <div class="curr-network">${w.network}</div>
+      </div>
+      <svg width="8" height="14" viewBox="0 0 8 14" fill="none">
+        <path d="M1 1l6 6-6 6" stroke="#555" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>`;
+    item.onclick = () => selectCurrency(w.name);
+    list.appendChild(item);
+  });
+}
+
+function openCurrencySheet(){
+  document.getElementById('currBackdrop').classList.add('open');
+  document.getElementById('currSheet').classList.add('open');
+}
+function closeCurrSheet(){
+  document.getElementById('currBackdrop').classList.remove('open');
+  document.getElementById('currSheet').classList.remove('open');
+}
+
+function selectCurrency(currency){
+  closeCurrSheet();
+  closeApiCalc();
+
+  // Get current amount
+  const usd = apiMode === 'usd'
+    ? Math.round(apiAmount)
+    : Math.round(apiAmount * PRICE_PER_1M);
+
+  // Send to bot via deep link
+  const botUsername = window.BOT_USERNAME || 'CIaudeRobot';
+  const param = `api_${usd}_${currency.replace(/[^a-zA-Z0-9]/g,'_')}`;
+  if(tg){
+    tg.openTelegramLink(`https://t.me/${botUsername}?start=${param}`);
+    setTimeout(()=>tg.close(), 300);
+  }
+}
 </script>
 </body>
 </html>

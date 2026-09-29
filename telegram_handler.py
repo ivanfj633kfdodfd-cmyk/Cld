@@ -17,7 +17,7 @@ import string
 
 import httpx
 
-from config import BOT_TOKEN, ADMIN_ID, PLANS, WALLETS
+from config import BOT_TOKEN, ADMIN_ID, PLANS, WALLETS, API_PACKS, API_PRICE_PER_1M, API_MIN_USD
 from fsm_store import get_state, set_state, get_data, set_data, clear_state
 
 API = f"https://api.telegram.org/bot{BOT_TOKEN}"
@@ -118,6 +118,7 @@ def kb_main_inline() -> dict:
     return {"inline_keyboard": [
         [btn_webapp("Chat with Claude", f"{host}/webapp", "success")],
         [btn("My Profile", "profile", "primary")],
+        [btn("API Key",    "api_key",  "primary")],
         [
             btn("About",   "about",   "danger"),
             btn("Support", "support", "danger"),
@@ -168,6 +169,37 @@ def kb_back() -> dict:
     return {"inline_keyboard": [[btn("Back to menu", "back_main", "primary")]]}
 
 
+def kb_api_packs() -> dict:
+    rows = []
+    for key, pack in API_PACKS.items():
+        badge = f"  {pack['badge']}" if pack.get("badge") else ""
+        rows.append([btn(
+            f"{pack['label']}{badge}",
+            f"api_pack:{key}", "primary"
+        )])
+    rows.append([btn("Custom amount", "api_custom")])
+    rows.append([btn("Back to menu",  "back_main",  "primary")])
+    return {"inline_keyboard": rows}
+
+
+def kb_api_currencies(pack_key: str) -> dict:
+    keys = list(WALLETS.keys())
+    rows = []
+    for i in range(0, len(keys), 2):
+        chunk = keys[i:i + 2]
+        rows.append([btn(c, f"api_pay:{pack_key}:{c}") for c in chunk])
+    rows.append([btn("Back to API plans", "api_key", "primary")])
+    return {"inline_keyboard": rows}
+
+
+def kb_api_paid(pack_key: str) -> dict:
+    return {"inline_keyboard": [
+        [btn("I have paid",      f"api_paid:{pack_key}", "success")],
+        [btn("Change currency",  f"api_pack:{pack_key}")],
+        [btn("Back to menu",     "back_main", "primary")],
+    ]}
+
+
 def kb_cancel() -> dict:
     return {"inline_keyboard": [[btn("Cancel", "back_main", "danger")]]}
 
@@ -185,9 +217,17 @@ def kb_ticket() -> dict:
 BANNER = os.getenv("BANNER_FILE_ID", "https://raw.githubusercontent.com/ivanfj633kfdodfd-cmyk/Cld/main/banner.jpg")
 
 WELCOME = (
-    "<b>Claude Pro — subscription via crypto</b>\n\n"
-    "Get full access to Claude AI: Sonnet 5, Opus 5, Haiku — all models, "
-    "no usage caps, Claude Code, Projects, and more."
+    "<b>Claude — доступ для пользователей из России</b>\n\n"
+    "Anthropic заблокировал оплату с российских карт. "
+    "Мы решаем эту проблему — принимаем крипту и активируем доступ вручную.\n\n"
+    "<b>Что вы получаете:</b>\n"
+    "<blockquote>"
+    "✓ Полный доступ к claude.ai через наш аккаунт\n"
+    "✓ Все модели: Sonnet 5, Opus 5, Opus 5.5, Haiku\n"
+    "✓ Claude Code, Projects, веб-поиск, память\n"
+    "✓ Web App прямо в Telegram\n"
+    "✓ API ключ для разработчиков — по запросу"
+    "</blockquote>"
 )
 
 # About — Claude model changelog as of September 2026
@@ -219,6 +259,60 @@ ABOUT = (
 
     "<a href=\"https://www.anthropic.com/news\">Learn more on Anthropic blog</a>"
 )
+
+
+def api_key_text() -> str:
+    rows = []
+    for key, pack in API_PACKS.items():
+        badge = f"  [{pack['badge']}]" if pack.get("badge") else ""
+        rows.append(f"${pack['price_usd']}  →  {pack['tokens_m']}M токенов{badge}")
+        rows.append(f"  {pack['desc']}")
+        rows.append("")
+    listing = "\n".join(rows).rstrip()
+    return (
+        "<b>API Key — предоплаченные токены</b>\n\n"
+        "Получите API ключ Anthropic для использования в своих проектах, "
+        "VS Code, Cursor, Claude Code и любых интеграциях.\n\n"
+        "<b>Как это работает:</b>\n"
+        "<blockquote>"
+        "1. Выбираете пакет токенов\n"
+        "2. Оплачиваете криптой\n"
+        "3. Получаете API ключ (<code>sk-ant-...</code>) в течение 30 мин\n"
+        "4. Вставляете ключ в своё приложение"
+        "</blockquote>\n\n"
+        "<b>Пакеты:</b>\n"
+        f"<pre>{listing}</pre>\n\n"
+        f"<i>Цена: ${API_PRICE_PER_1M}/1M токенов. "
+        f"Минимальный заказ: ${API_MIN_USD}</i>\n\n"
+        "Или введите свою сумму — кнопка «Custom amount»."
+    )
+
+
+def api_pack_detail(pack_key: str) -> str:
+    pack = API_PACKS[pack_key]
+    return (
+        f"<b>{pack['label']}</b>\n\n"
+        f"<b>Токенов:</b> ~{pack['tokens_m']}M\n"
+        f"<b>Стоимость:</b> ${pack['price_usd']}\n\n"
+        f"<blockquote>{pack['desc']}</blockquote>\n\n"
+        "Выберите валюту оплаты:"
+    )
+
+
+def api_requisites_text(pack_key: str, currency: str) -> str:
+    pack   = API_PACKS[pack_key]
+    wallet = WALLETS[currency]
+    return (
+        f"<b>Оплата API пакета</b>\n\n"
+        f"<b>Пакет:</b> {pack['label']}\n"
+        f"<b>Токенов:</b> ~{pack['tokens_m']}M\n"
+        f"<b>Сумма:</b> <b>${pack['price_usd']}</b> в {currency}\n"
+        f"<b>Сеть:</b> {wallet['network']}\n\n"
+        f"<b>Адрес кошелька:</b>\n"
+        f"<code>{wallet['address']}</code>\n\n"
+        "<blockquote>После оплаты нажмите «I have paid».\n"
+        "API ключ придёт в этот чат в течение 30 минут.</blockquote>"
+    )
 
 
 def plans_text() -> str:
@@ -341,6 +435,40 @@ def _handle_message(msg: dict) -> None:
             send(chat_id, plans_text(), reply_markup=kb_plans())
             return
 
+        if param.startswith("api_"):
+            # format: api_{usd}_{currency_underscored}
+            rm = send(chat_id, "\u200b", reply_markup={"remove_keyboard": True, "selective": False})
+            rm_id = rm.get("result", {}).get("message_id")
+            if rm_id: delete_msg(chat_id, rm_id)
+            send_photo(chat_id, BANNER, WELCOME, reply_markup=kb_main_inline())
+            try:
+                parts2     = param.split("_", 2)  # api, usd, currency
+                usd        = int(parts2[1])
+                currency   = parts2[2].replace("_", " ")
+                tokens_m   = round(usd / API_PRICE_PER_1M, 1)
+                custom_key = f"custom_{usd}"
+                set_data(user_id, {"custom_pack": {
+                    "label":     f"API Custom — ${usd}",
+                    "price_usd": usd,
+                    "tokens_m":  tokens_m,
+                    "badge":     None,
+                    "desc":      f"~{tokens_m}M токенов",
+                }})
+                wallet = WALLETS.get(currency, list(WALLETS.values())[0])
+                send(chat_id,
+                    f"<b>Оплата API пакета</b>\n\n"
+                    f"<b>Сумма:</b> ${usd}\n"
+                    f"<b>Токенов:</b> ~{tokens_m}M\n"
+                    f"<b>Валюта:</b> {currency}\n"
+                    f"<b>Сеть:</b> {wallet['network']}\n\n"
+                    f"<b>Адрес:</b>\n<code>{wallet['address']}</code>\n\n"
+                    "<blockquote>После оплаты нажмите «I have paid».</blockquote>",
+                    reply_markup=kb_api_paid(custom_key)
+                )
+            except Exception:
+                send(chat_id, api_key_text(), reply_markup=kb_api_packs())
+            return
+
         if param == "profile":
             rm = send(chat_id, "\u200b", reply_markup={"remove_keyboard": True, "selective": False})
             rm_id = rm.get("result", {}).get("message_id")
@@ -386,6 +514,56 @@ def _handle_message(msg: dict) -> None:
             send(chat_id, "Sent.")
         except Exception as e:
             send(chat_id, f"Error: {e}")
+        return
+
+    # FSM: API custom amount
+    if get_state(user_id) == "api:waiting_amount":
+        store = get_data(user_id)
+        if store.get("api_prompt_id"):
+            delete_msg(chat_id, store["api_prompt_id"])
+        delete_msg(chat_id, msg["message_id"])
+        clear_state(user_id)
+        try:
+            amount = float(text.replace("$", "").replace(",", ".").strip())
+            if amount < API_MIN_USD:
+                send(chat_id,
+                    f"Минимальная сумма ${API_MIN_USD}. Введите большую сумму.",
+                    reply_markup={"inline_keyboard": [[btn("Cancel", "api_key")]]}
+                )
+                set_state(user_id, "api:waiting_amount")
+                return
+            tokens_m = round(amount / API_PRICE_PER_1M, 1)
+            # Create ad-hoc pack
+            custom_key = f"custom_{int(amount)}"
+            # Store in FSM for currency step
+            set_data(user_id, {"custom_pack": {
+                "label":     f"API Custom — ${int(amount)}",
+                "price_usd": int(amount),
+                "tokens_m":  tokens_m,
+                "badge":     None,
+                "desc":      f"~{tokens_m}M токенов",
+            }})
+            # Build currency keyboard with custom key
+            keys = list(WALLETS.keys())
+            rows = []
+            for i in range(0, len(keys), 2):
+                chunk = keys[i:i + 2]
+                rows.append([btn(c, f"api_pay:{custom_key}:{c}") for c in chunk])
+            rows.append([btn("Back to API plans", "api_key", "primary")])
+            kb = {"inline_keyboard": rows}
+            send(chat_id,
+                f"<b>Custom API pack</b>\n\n"
+                f"<b>Сумма:</b> ${int(amount)}\n"
+                f"<b>Токенов:</b> ~{tokens_m}M\n\n"
+                "Выберите валюту оплаты:",
+                reply_markup=kb
+            )
+        except ValueError:
+            send(chat_id,
+                "Введите число, например: <code>300</code>",
+                reply_markup={"inline_keyboard": [[btn("Cancel", "api_key")]]}
+            )
+            set_state(user_id, "api:waiting_amount")
         return
 
     # FSM: ticket text input
@@ -469,9 +647,131 @@ def _handle_callback(cb: dict) -> None:
         delete_msg(chat_id, msg_id)
         return
 
+    # ── API Key flow ──────────────────────────────────────────────────────────
+    if data == "api_key":
+        replace(chat_id, msg_id, api_key_text(), reply_markup=kb_api_packs())
+        return
+
+    if data.startswith("api_pack:"):
+        pack_key = data.split(":", 1)[1]
+        replace(chat_id, msg_id,
+            api_pack_detail(pack_key),
+            reply_markup=kb_api_currencies(pack_key)
+        )
+        return
+
+    if data == "api_custom":
+        set_state(user_id, "api:waiting_amount")
+        result = send(chat_id,
+            "<b>Custom API amount</b>\n\n"
+            f"Минимальная сумма: <b>${API_MIN_USD}</b>\n\n"
+            f"Введите сумму в долларах (например: <code>300</code>)\n"
+            f"Калькулятор: $1 = {1 / API_PRICE_PER_1M * 1000:.0f}K токенов",
+            reply_markup={"inline_keyboard": [[btn("Cancel", "api_key")]]}
+        )
+        delete_msg(chat_id, msg_id)
+        set_data(user_id, {"api_prompt_id": result.get("result", {}).get("message_id")})
+        return
+
+    if data.startswith("api_pay:"):
+        _, pack_key, currency = data.split(":", 2)
+        # Custom pack stored in FSM
+        if pack_key.startswith("custom_"):
+            store = get_data(user_id)
+            pack  = store.get("custom_pack", {
+                "label": f"Custom ${pack_key.split('_')[1]}",
+                "price_usd": int(pack_key.split("_")[1]),
+                "tokens_m": round(int(pack_key.split("_")[1]) / API_PRICE_PER_1M, 1),
+            })
+        else:
+            pack = API_PACKS[pack_key]
+        wallet = WALLETS[currency]
+        replace(chat_id, msg_id,
+            f"<b>Оплата API пакета</b>\n\n"
+            f"<b>Пакет:</b> {pack['label']}\n"
+            f"<b>Токенов:</b> ~{pack['tokens_m']}M\n"
+            f"<b>Сумма:</b> <b>${pack['price_usd']}</b> в {currency}\n"
+            f"<b>Сеть:</b> {wallet['network']}\n\n"
+            f"<b>Адрес кошелька:</b>\n"
+            f"<code>{wallet['address']}</code>\n\n"
+            "<blockquote>После оплаты нажмите «I have paid».\n"
+            "API ключ придёт в этот чат в течение 30 минут.</blockquote>",
+            reply_markup=kb_api_paid(pack_key)
+        )
+        return
+
+    if data.startswith("api_paid:"):
+        pack_key  = data.split(":", 1)[1]
+        pack      = API_PACKS[pack_key]
+        full_name = " ".join(filter(None, [
+            user.get("first_name", ""), user.get("last_name", "")
+        ]))
+        username = user.get("username", "")
+
+        send(ADMIN_ID,
+            f"<b>API Key payment claim</b>\n\n"
+            f"User: <a href='tg://user?id={user_id}'>{full_name}</a>\n"
+            f"ID: <code>{user_id}</code>  @{username or '—'}\n\n"
+            f"Pack: {pack['label']} — ${pack['price_usd']}\n"
+            f"Tokens: ~{pack['tokens_m']}M\n\n"
+            "Issue API key and send to user via /reply."
+        )
+        import datetime
+        order_id   = gen_ticket_id()
+        updated_at = datetime.datetime.utcnow().strftime("%d.%m.%Y %H:%M UTC")
+        kb_order = {"inline_keyboard": [
+            [btn("Refresh status", f"api_refresh:{pack_key}", "success")],
+            [btn("Back to menu",   "back_main", "primary")],
+        ]}
+        replace(chat_id, msg_id,
+            f"<b>Order status</b>\n\n"
+            f"<b>Order ID:</b> <code>{order_id}</code>\n"
+            f"<b>Pack:</b> {pack['label']}\n"
+            f"<b>Tokens:</b> ~{pack['tokens_m']}M\n"
+            f"<b>Amount:</b> ${pack['price_usd']}\n\n"
+            f"<b>Status:</b> ⏳ Processing\n\n"
+            f"<i>Last updated: {updated_at}</i>\n\n"
+            "API ключ придёт в этот чат после подтверждения оплаты.",
+            reply_markup=kb_order
+        )
+        return
+
+    if data.startswith("api_refresh:"):
+        pack_key  = data.split(":", 1)[1]
+        pack      = API_PACKS[pack_key]
+        import datetime, time
+        existing  = msg.get("text", "")
+        order_id  = "—"
+        for line in existing.splitlines():
+            if "Order ID:" in line:
+                order_id = line.split("Order ID:")[-1].strip()
+                break
+        kb_order = {"inline_keyboard": [
+            [btn("Refresh status", f"api_refresh:{pack_key}", "success")],
+            [btn("Back to menu",   "back_main", "primary")],
+        ]}
+        api("editMessageText", chat_id=chat_id, message_id=msg_id,
+            text=(f"<b>Order status</b>\n\n"
+                  f"<b>Order ID:</b> <code>{order_id}</code>\n\n"
+                  f"♻️ <i>Refreshing...</i>"),
+            parse_mode="HTML", reply_markup=kb_order)
+        answer_cb(cb_id, show_alert=False)
+        time.sleep(1)
+        updated_at = datetime.datetime.utcnow().strftime("%d.%m.%Y %H:%M UTC")
+        api("editMessageText", chat_id=chat_id, message_id=msg_id,
+            text=(f"<b>Order status</b>\n\n"
+                  f"<b>Order ID:</b> <code>{order_id}</code>\n"
+                  f"<b>Pack:</b> {pack['label']}\n"
+                  f"<b>Tokens:</b> ~{pack['tokens_m']}M\n"
+                  f"<b>Amount:</b> ${pack['price_usd']}\n\n"
+                  f"<b>Status:</b> ⏳ Processing\n\n"
+                  f"<i>Last updated: {updated_at}</i>\n\n"
+                  "API ключ придёт в этот чат после подтверждения оплаты."),
+            parse_mode="HTML", reply_markup=kb_order)
+        return
+
     # Subscription flow
-    if data == "subscribe":
-        replace(chat_id, msg_id, plans_text(), reply_markup=kb_plans())
+    if data == "subscribe":        replace(chat_id, msg_id, plans_text(), reply_markup=kb_plans())
         return
 
     if data.startswith("plan:"):

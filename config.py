@@ -115,3 +115,36 @@ PLANS: dict[str, dict] = {
         ],
     },
 }
+
+# ── API Key packs ──────────────────────────────────────────────────────────────
+# Pricing basis: Sonnet 5 blended ~$4/1M tokens (input+output mix)
+# We sell at ~2x margin
+#
+# 1M tokens ≈ 2000 chats OR 50-200 coding tasks
+#
+API_PRICE_PER_1M = 8.0   # USD we charge per 1M tokens (blended, all models)
+API_MIN_USD      = 100    # minimum order in USD
+
+API_PACKS: dict[str, dict] = {
+    "api_100": {
+        "label":      "$100 — API credits",
+        "price_usd":  100,
+        "tokens_m":   12.5,   # million tokens (~12.5M)
+        "badge":      None,
+        "desc":       "~12.5M tokens · ~6 months for average dev",
+    },
+    "api_200": {
+        "label":      "$200 — API credits",
+        "price_usd":  200,
+        "tokens_m":   25,
+        "badge":      "Popular",
+        "desc":       "~25M tokens · ~1 year for average dev",
+    },
+    "api_500": {
+        "label":      "$500 — API credits",
+        "price_usd":  500,
+        "tokens_m":   65,
+        "badge":      "Best value",
+        "desc":       "~65M tokens · heavy usage for 6-12 months",
+    },
+}
