@@ -771,7 +771,8 @@ def _handle_callback(cb: dict) -> None:
         return
 
     # Subscription flow
-    if data == "subscribe":        replace(chat_id, msg_id, plans_text(), reply_markup=kb_plans())
+    if data == "subscribe":
+        replace(chat_id, msg_id, plans_text(), reply_markup=kb_plans())
         return
 
     if data.startswith("plan:"):
