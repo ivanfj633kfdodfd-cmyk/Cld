@@ -609,7 +609,39 @@ body{
       <img src="https://www.svgrepo.com/show/532932/delete-left.svg" style="width:22px;height:22px;filter:invert(.6);" alt="del">
     </button>
   </div>
-  <div class="pin-skip" onclick="pinSkip()">Skip, open without PIN</div>
+  <div class="pin-skip" id="pinSkipBtn" onclick="pinSkip()" style="display:none;">Skip, open without PIN</div>
+  <div class="pin-skip" id="pinResetBtn" onclick="confirmReset()" style="display:none;color:#e05c5c;">Forgot PIN? Reset</div>
+</div>
+
+<!-- PIN reset modal -->
+<div id="pinResetModal" style="
+  display:none;position:fixed;inset:0;z-index:10000;
+  background:rgba(0,0,0,.7);
+  align-items:center;justify-content:center;
+">
+  <div style="
+    background:#1e1e1e;border:1px solid #2a2a2a;border-radius:16px;
+    padding:24px 20px;max-width:300px;width:90%;text-align:center;
+  ">
+    <div style="font-size:28px;margin-bottom:12px;">⚠️</div>
+    <div style="font-size:16px;font-weight:700;margin-bottom:8px;">Reset PIN?</div>
+    <div style="font-size:13px;color:#888;line-height:1.5;margin-bottom:20px;">
+      All saved chats will be cleared.<br>
+      You can set a new PIN or continue without one.
+    </div>
+    <button onclick="doReset()" style="
+      width:100%;padding:11px;margin-bottom:8px;
+      background:#e05c5c;border:none;border-radius:10px;
+      color:#fff;font-size:14px;font-weight:600;cursor:pointer;
+      font-family:inherit;
+    ">Reset and clear chats</button>
+    <button onclick="cancelReset()" style="
+      width:100%;padding:11px;
+      background:#2a2a2a;border:none;border-radius:10px;
+      color:#888;font-size:14px;cursor:pointer;
+      font-family:inherit;
+    ">Cancel</button>
+  </div>
 </div>
 
 <!-- ══ TOPBAR ════════════════════════════════════════════════════════════════ -->
@@ -639,8 +671,13 @@ body{
 
 <!-- ══ INPUT ═════════════════════════════════════════════════════════════════ -->
 <div class="input-area">
-  <div class="input-upgrade">
-    Free plan · <a href="#" onclick="openPaywall();return false;">Upgrade</a> · <a href="#" onclick="openApiCalc();return false;">API Key</a>
+  <div style="display:flex;gap:6px;justify-content:center;margin-bottom:8px;">
+    <div class="input-upgrade">
+      Free plan · <a href="#" onclick="openPaywall();return false;">Upgrade</a>
+    </div>
+    <div class="input-upgrade">
+      <a href="#" onclick="openApiCalc();return false;">API Key</a>
+    </div>
   </div>
   <div class="input-box">
     <div class="input-row">
@@ -885,6 +922,7 @@ body{
       Subscribe to unlock all models, Claude Code, Projects and unlimited usage.
     </div>
     <button class="profile-sub-btn" onclick="closeProfile();openPaywall();">Subscribe</button>
+    <button class="profile-sub-btn" style="background:#2a6db5;margin-top:8px;" onclick="closeProfile();openApiCalc();">Get API Key</button>
   </div>
 </div>
 
@@ -1053,8 +1091,8 @@ body{
 
     <!-- Mode toggle: $ ↔ tokens -->
     <div class="api-mode">
-      <button class="api-mode-btn active" id="modeUsd"   onclick="setApiMode('usd')">$ Dollars → Tokens</button>
-      <button class="api-mode-btn"        id="modeToken" onclick="setApiMode('token')">Tokens → $</button>
+      <button class="api-mode-btn active" id="modeUsd"   onclick="setApiMode('usd')">USD → Tokens</button>
+      <button class="api-mode-btn"        id="modeToken" onclick="setApiMode('token')">Tokens → USD</button>
     </div>
 
     <!-- Slider display -->
@@ -1072,10 +1110,6 @@ body{
     <input type="range" class="api-range" id="apiSlider"
       min="100" max="1000" step="10" value="100"
       oninput="onSlider(this)">
-    <div class="api-range-limits">
-      <span id="rangeMin">$100</span>
-      <span id="rangeMax">$1000</span>
-    </div>
 
     <!-- Presets -->
     <div class="api-presets">
@@ -1215,14 +1249,20 @@ let pinFirst  = '';
 
 function initPin(){
   const stored = localStorage.getItem(PIN_KEY);
+  const skipBtn  = document.getElementById('pinSkipBtn');
+  const resetBtn = document.getElementById('pinResetBtn');
   if(!stored){
     pinMode = 'set';
     document.getElementById('pinTitle').textContent = 'Set a PIN';
     document.getElementById('pinSub').textContent   = 'Create a 4-digit PIN to protect your chats';
+    skipBtn.style.display  = 'block';  // first time — can skip
+    resetBtn.style.display = 'none';
   } else {
     pinMode = 'verify';
     document.getElementById('pinTitle').textContent = 'Enter PIN';
     document.getElementById('pinSub').textContent   = 'Verify your identity to open Claude';
+    skipBtn.style.display  = 'none';   // PIN set — no skip
+    resetBtn.style.display = 'block';  // show reset instead
   }
 }
 
@@ -1280,6 +1320,27 @@ function checkPin(){
 
 function pinSkip(){
   unlockApp();
+}
+
+function confirmReset(){
+  document.getElementById('pinResetModal').style.display = 'flex';
+}
+function cancelReset(){
+  document.getElementById('pinResetModal').style.display = 'none';
+}
+function doReset(){
+  localStorage.removeItem(PIN_KEY);
+  document.getElementById('pinResetModal').style.display = 'none';
+  // Re-init as fresh set
+  pinMode  = 'set';
+  pinBuffer = '';
+  pinFirst  = '';
+  updateDots();
+  document.getElementById('pinTitle').textContent = 'Set a new PIN';
+  document.getElementById('pinSub').textContent   = 'Create a 4-digit PIN or skip to open without protection';
+  document.getElementById('pinSkipBtn').style.display  = 'block';
+  document.getElementById('pinResetBtn').style.display = 'none';
+  document.getElementById('pinStatus').textContent = '';
 }
 
 function unlockApp(){
@@ -1457,8 +1518,6 @@ function setApiMode(mode){
     slider.max   = 1000;
     slider.step  = 10;
     slider.value = Math.max(100, apiAmount);
-    document.getElementById('rangeMin').textContent = '$100';
-    document.getElementById('rangeMax').textContent = '$1000';
     document.getElementById('customUnit').textContent = 'USD';
   } else {
     // token mode: slider in millions, 12.5M — 125M
@@ -1466,8 +1525,6 @@ function setApiMode(mode){
     slider.max   = 125;
     slider.step  = 1;
     slider.value = 12.5;
-    document.getElementById('rangeMin').textContent = '12.5M';
-    document.getElementById('rangeMax').textContent = '125M';
     document.getElementById('customUnit').textContent = 'M tokens';
   }
   apiAmount = parseFloat(slider.value);
@@ -1577,15 +1634,15 @@ function updateCalc(){
 
 /* ══════════════════════ CURRENCY SHEET ════════════════════════════════════ */
 const WALLETS = [
-  { name: 'USDT TRC-20',  network: 'TRON (TRC-20)' },
-  { name: 'USDT ERC-20',  network: 'Ethereum (ERC-20)' },
-  { name: 'USDC ERC-20',  network: 'Ethereum (ERC-20)' },
-  { name: 'TRX',          network: 'TRON' },
-  { name: 'ETH',          network: 'Ethereum' },
-  { name: 'BNB',          network: 'BNB Smart Chain' },
-  { name: 'BTC',          network: 'Bitcoin' },
-  { name: 'SOL',          network: 'Solana' },
-  { name: 'TON',          network: 'TON' },
+  { name: 'USDT TRC-20',  network: 'TRON (TRC-20)',      rate: 1,        symbol: 'USDT' },
+  { name: 'USDT ERC-20',  network: 'Ethereum (ERC-20)',   rate: 1,        symbol: 'USDT' },
+  { name: 'USDC ERC-20',  network: 'Ethereum (ERC-20)',   rate: 1,        symbol: 'USDC' },
+  { name: 'TRX',          network: 'TRON',                rate: 0.13,     symbol: 'TRX'  },
+  { name: 'ETH',          network: 'Ethereum',            rate: 2500,     symbol: 'ETH'  },
+  { name: 'BNB',          network: 'BNB Smart Chain',     rate: 580,      symbol: 'BNB'  },
+  { name: 'BTC',          network: 'Bitcoin',             rate: 95000,    symbol: 'BTC'  },
+  { name: 'SOL',          network: 'Solana',              rate: 145,      symbol: 'SOL'  },
+  { name: 'TON',          network: 'TON',                 rate: 4.8,      symbol: 'TON'  },
 ];
 
 function initCurrencyList(){
@@ -1598,23 +1655,53 @@ function initCurrencyList(){
     }
     const item = document.createElement('div');
     item.className = 'curr-item';
+    item.id = `curr-item-${i}`;
     item.innerHTML = `
       <div>
         <div>${w.name}</div>
         <div class="curr-network">${w.network}</div>
       </div>
-      <svg width="8" height="14" viewBox="0 0 8 14" fill="none">
-        <path d="M1 1l6 6-6 6" stroke="#555" stroke-width="1.5" stroke-linecap="round"/>
-      </svg>`;
+      <div style="text-align:right;">
+        <div id="curr-amt-${i}" style="font-size:13px;font-weight:600;color:#e8e8e8;"></div>
+        <svg width="8" height="14" viewBox="0 0 8 14" fill="none" style="margin-left:8px;vertical-align:middle;">
+          <path d="M1 1l6 6-6 6" stroke="#555" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>`;
     item.onclick = () => selectCurrency(w.name);
     list.appendChild(item);
   });
+  updateCurrencyAmounts();
 }
 
 function openCurrencySheet(){
+  updateCurrencyAmounts();
   document.getElementById('currBackdrop2').classList.add('open');
   document.getElementById('currSheet').classList.add('open');
 }
+function updateCurrencyAmounts(){
+  const usd = apiMode === 'usd'
+    ? Math.max(API_MIN, Math.round(apiAmount))
+    : Math.round(apiAmount * PRICE_PER_1M);
+  WALLETS.forEach((w, i) => {
+    const el = document.getElementById(`curr-amt-${i}`);
+    if(!el) return;
+    const amt = usd / w.rate;
+    let display;
+    if(w.rate === 1){
+      display = `${usd} ${w.symbol}`;
+    } else if(amt < 0.001){
+      display = `${amt.toFixed(6)} ${w.symbol}`;
+    } else if(amt < 0.01){
+      display = `${amt.toFixed(4)} ${w.symbol}`;
+    } else if(amt < 1){
+      display = `${amt.toFixed(3)} ${w.symbol}`;
+    } else {
+      display = `${amt.toFixed(2)} ${w.symbol}`;
+    }
+    el.textContent = display;
+  });
+}
+
 function closeCurrSheet(){
   document.getElementById('currBackdrop2').classList.remove('open');
   document.getElementById('currSheet').classList.remove('open');

@@ -118,7 +118,7 @@ def kb_main_inline() -> dict:
     return {"inline_keyboard": [
         [btn_webapp("Chat with Claude", f"{host}/webapp", "success")],
         [btn("My Profile", "profile", "primary")],
-        [btn("API Key",    "api_key",  "primary")],
+        [btn("API Key",    "api_key",  "success")],
         [
             btn("About",   "about",   "danger"),
             btn("Support", "support", "danger"),
@@ -217,16 +217,14 @@ def kb_ticket() -> dict:
 BANNER = os.getenv("BANNER_FILE_ID", "https://raw.githubusercontent.com/ivanfj633kfdodfd-cmyk/Cld/main/banner.jpg")
 
 WELCOME = (
-    "<b>Claude — доступ для пользователей из России</b>\n\n"
-    "Anthropic заблокировал оплату с российских карт. "
-    "Мы решаем эту проблему — принимаем крипту и активируем доступ вручную.\n\n"
-    "<b>Что вы получаете:</b>\n"
+    "<b>Claude AI — subscription via crypto</b>\n\n"
+    "Get full access to Claude AI: all models, Claude Code, "
+    "Projects, web search, and more.\n\n"
     "<blockquote>"
-    "✓ Полный доступ к claude.ai через наш аккаунт\n"
-    "✓ Все модели: Sonnet 5, Opus 5, Opus 5.5, Haiku\n"
-    "✓ Claude Code, Projects, веб-поиск, память\n"
-    "✓ Web App прямо в Telegram\n"
-    "✓ API ключ для разработчиков — по запросу"
+    "✓ Sonnet 5, Opus 5, Opus 5.5, Haiku — all models\n"
+    "✓ Claude Code, Projects, memory, web search\n"
+    "✓ Web App inside Telegram\n"
+    "✓ API key for developers — available on request"
     "</blockquote>"
 )
 
@@ -265,26 +263,25 @@ def api_key_text() -> str:
     rows = []
     for key, pack in API_PACKS.items():
         badge = f"  [{pack['badge']}]" if pack.get("badge") else ""
-        rows.append(f"${pack['price_usd']}  →  {pack['tokens_m']}M токенов{badge}")
+        rows.append(f"${pack['price_usd']}  →  {pack['tokens_m']}M tokens{badge}")
         rows.append(f"  {pack['desc']}")
         rows.append("")
     listing = "\n".join(rows).rstrip()
     return (
-        "<b>API Key — предоплаченные токены</b>\n\n"
-        "Получите API ключ Anthropic для использования в своих проектах, "
-        "VS Code, Cursor, Claude Code и любых интеграциях.\n\n"
-        "<b>Как это работает:</b>\n"
+        "<b>API Key — prepaid tokens</b>\n\n"
+        "Get an Anthropic API key to use in your projects — "
+        "VS Code, Cursor, Claude Code, or any integration.\n\n"
+        "<b>How it works:</b>\n"
         "<blockquote>"
-        "1. Выбираете пакет токенов\n"
-        "2. Оплачиваете криптой\n"
-        "3. Получаете API ключ (<code>sk-ant-...</code>) в течение 30 мин\n"
-        "4. Вставляете ключ в своё приложение"
+        "1. Choose a token pack\n"
+        "2. Pay with crypto\n"
+        "3. Receive your API key (<code>sk-ant-...</code>) within 30 min\n"
+        "4. Paste the key into your app or IDE"
         "</blockquote>\n\n"
-        "<b>Пакеты:</b>\n"
+        "<b>Packs:</b>\n"
         f"<pre>{listing}</pre>\n\n"
-        f"<i>Цена: ${API_PRICE_PER_1M}/1M токенов. "
-        f"Минимальный заказ: ${API_MIN_USD}</i>\n\n"
-        "Или введите свою сумму — кнопка «Custom amount»."
+        f"<i>${API_PRICE_PER_1M}/1M tokens · minimum order ${API_MIN_USD}</i>\n\n"
+        "Or enter a custom amount with the button below."
     )
 
 
@@ -292,26 +289,36 @@ def api_pack_detail(pack_key: str) -> str:
     pack = API_PACKS[pack_key]
     return (
         f"<b>{pack['label']}</b>\n\n"
-        f"<b>Токенов:</b> ~{pack['tokens_m']}M\n"
-        f"<b>Стоимость:</b> ${pack['price_usd']}\n\n"
+        f"<b>Tokens:</b> ~{pack['tokens_m']}M\n"
+        f"<b>Price:</b> ${pack['price_usd']} USD\n\n"
         f"<blockquote>{pack['desc']}</blockquote>\n\n"
-        "Выберите валюту оплаты:"
+        "Select payment currency:"
     )
 
 
-def api_requisites_text(pack_key: str, currency: str) -> str:
-    pack   = API_PACKS[pack_key]
+def api_requisites_text(pack_key: str, currency: str, usd: int | None = None,
+                        tokens_m: float | None = None) -> str:
+    if pack_key.startswith("custom_") and usd:
+        label   = f"API Custom — ${usd}"
+        tok     = tokens_m or round(usd / API_PRICE_PER_1M, 1)
+        price   = usd
+    else:
+        pack    = API_PACKS[pack_key]
+        label   = pack["label"]
+        tok     = pack["tokens_m"]
+        price   = pack["price_usd"]
     wallet = WALLETS[currency]
     return (
-        f"<b>Оплата API пакета</b>\n\n"
-        f"<b>Пакет:</b> {pack['label']}\n"
-        f"<b>Токенов:</b> ~{pack['tokens_m']}M\n"
-        f"<b>Сумма:</b> <b>${pack['price_usd']}</b> в {currency}\n"
-        f"<b>Сеть:</b> {wallet['network']}\n\n"
-        f"<b>Адрес кошелька:</b>\n"
+        f"<b>API Key payment</b>\n\n"
+        f"<b>Pack:</b> {label}\n"
+        f"<b>Tokens:</b> ~{tok}M\n"
+        f"<b>Amount:</b> <b>${price} USD</b> in {currency}\n"
+        f"<b>Network:</b> {wallet['network']}\n\n"
+        f"<b>Wallet address:</b>\n"
         f"<code>{wallet['address']}</code>\n\n"
-        "<blockquote>После оплаты нажмите «I have paid».\n"
-        "API ключ придёт в этот чат в течение 30 минут.</blockquote>"
+        "<blockquote>Send exactly via the network shown above.\n"
+        "After payment tap \"I have paid\" — "
+        "your API key will arrive within 30 minutes.</blockquote>"
     )
 
 
@@ -527,7 +534,7 @@ def _handle_message(msg: dict) -> None:
             amount = float(text.replace("$", "").replace(",", ".").strip())
             if amount < API_MIN_USD:
                 send(chat_id,
-                    f"Минимальная сумма ${API_MIN_USD}. Введите большую сумму.",
+                    f"Minimum amount is ${API_MIN_USD}. Please enter a larger amount.",
                     reply_markup={"inline_keyboard": [[btn("Cancel", "api_key")]]}
                 )
                 set_state(user_id, "api:waiting_amount")
@@ -553,14 +560,14 @@ def _handle_message(msg: dict) -> None:
             kb = {"inline_keyboard": rows}
             send(chat_id,
                 f"<b>Custom API pack</b>\n\n"
-                f"<b>Сумма:</b> ${int(amount)}\n"
-                f"<b>Токенов:</b> ~{tokens_m}M\n\n"
-                "Выберите валюту оплаты:",
+                f"<b>Amount:</b> ${int(amount)} USD\n"
+                f"<b>Tokens:</b> ~{tokens_m}M\n\n"
+                "Select payment currency:",
                 reply_markup=kb
             )
         except ValueError:
             send(chat_id,
-                "Введите число, например: <code>300</code>",
+                "Please enter a number, e.g. <code>300</code>",
                 reply_markup={"inline_keyboard": [[btn("Cancel", "api_key")]]}
             )
             set_state(user_id, "api:waiting_amount")
@@ -664,9 +671,9 @@ def _handle_callback(cb: dict) -> None:
         set_state(user_id, "api:waiting_amount")
         result = send(chat_id,
             "<b>Custom API amount</b>\n\n"
-            f"Минимальная сумма: <b>${API_MIN_USD}</b>\n\n"
-            f"Введите сумму в долларах (например: <code>300</code>)\n"
-            f"Калькулятор: $1 = {1 / API_PRICE_PER_1M * 1000:.0f}K токенов",
+            f"Minimum order: <b>${API_MIN_USD}</b>\n\n"
+            f"Enter amount in USD (e.g. <code>300</code>)\n"
+            f"Rate: $1 = {1 / API_PRICE_PER_1M * 1000:.0f}K tokens",
             reply_markup={"inline_keyboard": [[btn("Cancel", "api_key")]]}
         )
         delete_msg(chat_id, msg_id)
@@ -675,27 +682,22 @@ def _handle_callback(cb: dict) -> None:
 
     if data.startswith("api_pay:"):
         _, pack_key, currency = data.split(":", 2)
-        # Custom pack stored in FSM
         if pack_key.startswith("custom_"):
             store = get_data(user_id)
             pack  = store.get("custom_pack", {
-                "label": f"Custom ${pack_key.split('_')[1]}",
+                "label":     f"Custom ${pack_key.split('_')[1]}",
                 "price_usd": int(pack_key.split("_")[1]),
-                "tokens_m": round(int(pack_key.split("_")[1]) / API_PRICE_PER_1M, 1),
+                "tokens_m":  round(int(pack_key.split("_")[1]) / API_PRICE_PER_1M, 1),
             })
+            usd      = pack["price_usd"]
+            tokens_m = pack["tokens_m"]
         else:
-            pack = API_PACKS[pack_key]
+            pack     = API_PACKS[pack_key]
+            usd      = pack["price_usd"]
+            tokens_m = pack["tokens_m"]
         wallet = WALLETS[currency]
         replace(chat_id, msg_id,
-            f"<b>Оплата API пакета</b>\n\n"
-            f"<b>Пакет:</b> {pack['label']}\n"
-            f"<b>Токенов:</b> ~{pack['tokens_m']}M\n"
-            f"<b>Сумма:</b> <b>${pack['price_usd']}</b> в {currency}\n"
-            f"<b>Сеть:</b> {wallet['network']}\n\n"
-            f"<b>Адрес кошелька:</b>\n"
-            f"<code>{wallet['address']}</code>\n\n"
-            "<blockquote>После оплаты нажмите «I have paid».\n"
-            "API ключ придёт в этот чат в течение 30 минут.</blockquote>",
+            api_requisites_text(pack_key, currency, usd=usd, tokens_m=tokens_m),
             reply_markup=kb_api_paid(pack_key)
         )
         return
@@ -712,7 +714,7 @@ def _handle_callback(cb: dict) -> None:
             f"<b>API Key payment claim</b>\n\n"
             f"User: <a href='tg://user?id={user_id}'>{full_name}</a>\n"
             f"ID: <code>{user_id}</code>  @{username or '—'}\n\n"
-            f"Pack: {pack['label']} — ${pack['price_usd']}\n"
+            f"Pack: {pack['label']} — ${pack['price_usd']} USD\n"
             f"Tokens: ~{pack['tokens_m']}M\n\n"
             "Issue API key and send to user via /reply."
         )
@@ -728,10 +730,10 @@ def _handle_callback(cb: dict) -> None:
             f"<b>Order ID:</b> <code>{order_id}</code>\n"
             f"<b>Pack:</b> {pack['label']}\n"
             f"<b>Tokens:</b> ~{pack['tokens_m']}M\n"
-            f"<b>Amount:</b> ${pack['price_usd']}\n\n"
+            f"<b>Amount:</b> ${pack['price_usd']} USD\n\n"
             f"<b>Status:</b> ⏳ Processing\n\n"
             f"<i>Last updated: {updated_at}</i>\n\n"
-            "API ключ придёт в этот чат после подтверждения оплаты.",
+            "Your API key will be sent to this chat once payment is confirmed.",
             reply_markup=kb_order
         )
         return
@@ -893,8 +895,7 @@ def _handle_callback(cb: dict) -> None:
             "<b>Support</b>\n\n"
             "Describe your issue and send it as the next message.",
             reply_markup=kb_cancel()
-        )
-        delete_msg(chat_id, msg_id)
+        )        delete_msg(chat_id, msg_id)
         prompt_id = result.get("result", {}).get("message_id")
         set_data(user_id, {"prompt_msg_id": prompt_id})
         return
