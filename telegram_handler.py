@@ -895,7 +895,8 @@ def _handle_callback(cb: dict) -> None:
             "<b>Support</b>\n\n"
             "Describe your issue and send it as the next message.",
             reply_markup=kb_cancel()
-        )        delete_msg(chat_id, msg_id)
+        )
+        delete_msg(chat_id, msg_id)
         prompt_id = result.get("result", {}).get("message_id")
         set_data(user_id, {"prompt_msg_id": prompt_id})
         return

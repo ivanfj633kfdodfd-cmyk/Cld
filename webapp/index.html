@@ -623,8 +623,7 @@ body{
     background:#1e1e1e;border:1px solid #2a2a2a;border-radius:16px;
     padding:24px 20px;max-width:300px;width:90%;text-align:center;
   ">
-    <div style="font-size:28px;margin-bottom:12px;">⚠️</div>
-    <div style="font-size:16px;font-weight:700;margin-bottom:8px;">Reset PIN?</div>
+    <div style="font-size:28px;margin-bottom:12px;color:#e05c5c;font-weight:700;font-size:18px;">Reset PIN?</div>
     <div style="font-size:13px;color:#888;line-height:1.5;margin-bottom:20px;">
       All saved chats will be cleared.<br>
       You can set a new PIN or continue without one.
@@ -1709,10 +1708,9 @@ function closeCurrSheet(){
 
 function selectCurrency(currency){
   closeCurrSheet();
-  closeApiCalc();
 
   const usd = apiMode === 'usd'
-    ? Math.round(apiAmount)
+    ? Math.max(API_MIN, Math.round(apiAmount))
     : Math.round(apiAmount * PRICE_PER_1M);
 
   const botUsername = window.BOT_USERNAME || 'CIaudeRobot';
@@ -1721,13 +1719,42 @@ function selectCurrency(currency){
   const url         = `https://t.me/${botUsername}?start=${param}`;
 
   if(tg){
-    // openTelegramLink works for t.me links in Bot API 6.1+
-    tg.openTelegramLink(url);
-    // close webapp after short delay
-    setTimeout(()=>{ try{ tg.close(); }catch(e){} }, 400);
+    try {
+      closeApiCalc();
+      tg.openTelegramLink(url);
+      setTimeout(()=>{ try{ tg.close(); }catch(e){} }, 500);
+    } catch(e){
+      showPayInstructions(url, usd, currency);
+    }
   } else {
     window.open(url, '_blank');
   }
+}
+
+function showPayInstructions(url, usd, currency){
+  closeApiCalc();
+  // Show a message in the chat area with the link
+  const welcome = document.getElementById('welcome');
+  if(welcome) welcome.remove();
+  const wrap = document.getElementById('msgWrap');
+  const div  = document.createElement('div');
+  div.className = 'msg ai';
+  div.innerHTML = `
+    <div class="msg-body" style="max-width:100%">
+      <div class="msg-name">Claude</div>
+      <div class="msg-bubble">
+        <b>API payment — $${usd} in ${currency}</b><br><br>
+        Tap the button below to open the bot and complete payment:
+        <br><br>
+        <a href="${url}" style="
+          display:inline-block;padding:10px 18px;
+          background:#d4956a;color:#fff;border-radius:8px;
+          text-decoration:none;font-weight:600;font-size:14px;
+        ">Open bot to pay →</a>
+      </div>
+    </div>`;
+  wrap.appendChild(div);
+  document.getElementById('messages').scrollTop = 99999;
 }
 </script>
 </body>
