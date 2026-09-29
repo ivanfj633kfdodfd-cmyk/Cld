@@ -323,72 +323,84 @@ def api_pack_detail(pack_key: str) -> str:
 
 
 # ── Crypto price lookup ────────────────────────────────────────────────────────
-# CoinGecko IDs for currencies we support
-_CG_IDS: dict[str, str] = {
-    "TRX":          "tron",
-    "TRON (TRX)":   "tron",
-    "ETH":          "ethereum",
-    "BNB":          "binancecoin",
-    "BTC":          "bitcoin",
-    "SOL":          "solana",
-    "TON":          "the-open-network",
+_STABLE  = {"USDT TRC-20", "USDT ERC-20", "USDC ERC-20", "USDT", "USDC"}
+
+# Binance symbols for each currency
+_BINANCE_SYM: dict[str, str] = {
+    "TRX":          "TRXUSDT",
+    "ETH":          "ETHUSDT",
+    "BNB":          "BNBUSDT",
+    "BTC":          "BTCUSDT",
+    "SOL":          "SOLUSDT",
+    "TON":          "TONUSDT",
 }
-# Stablecoins — always 1:1
-_STABLE = {"USDT TRC-20", "USDT ERC-20", "USDC ERC-20", "USDT", "USDC"}
 
-# In-memory cache: {cg_id: (price, timestamp)}
+# Hardcoded fallback rates (updated Sep 2026)
+_FALLBACK: dict[str, float] = {
+    "TRX": 0.13, "ETH": 2500, "BNB": 580,
+    "BTC": 95000, "SOL": 145, "TON": 4.8,
+}
+
 _price_cache: dict[str, tuple[float, float]] = {}
-_CACHE_TTL = 300  # 5 min
+_CACHE_TTL = 120  # 2 min
 
 
-def get_crypto_price(currency: str) -> float | None:
-    """Return USD price of 1 unit of currency. None = unknown/stable."""
+def get_crypto_price(currency: str) -> float:
+    """Return USD price of 1 unit. Stablecoins = 1.0. Never returns None."""
     import time
-    if currency in _STABLE:
+    # Normalize: "ETH", "BTC", "USDT TRC-20" → ticker
+    ticker = currency.split()[0]
+
+    if ticker in ("USDT", "USDC"):
         return 1.0
-    cg_id = _CG_IDS.get(currency)
-    if not cg_id:
-        return None
+
+    sym = _BINANCE_SYM.get(ticker)
+    if not sym:
+        return _FALLBACK.get(ticker, 1.0)
+
     now = time.time()
-    if cg_id in _price_cache:
-        price, ts = _price_cache[cg_id]
+    if sym in _price_cache:
+        price, ts = _price_cache[sym]
         if now - ts < _CACHE_TTL:
             return price
+
     try:
         r = httpx.get(
-            "https://api.coingecko.com/api/v3/simple/price",
-            params={"ids": cg_id, "vs_currencies": "usd"},
-            timeout=4
+            f"https://api.binance.com/api/v3/ticker/price",
+            params={"symbol": sym},
+            timeout=5
         )
-        data = r.json()
-        price = data[cg_id]["usd"]
-        _price_cache[cg_id] = (price, now)
+        data  = r.json()
+        price = float(data["price"])
+        _price_cache[sym] = (price, now)
+        log.info(f"Price {sym}: ${price}")
         return price
-    except Exception:
-        # Return cached even if stale
-        if cg_id in _price_cache:
-            return _price_cache[cg_id][0]
-        return None
+    except Exception as e:
+        log.warning(f"Price fetch failed for {sym}: {e}")
+        # Return stale cache or fallback
+        if sym in _price_cache:
+            return _price_cache[sym][0]
+        return _FALLBACK.get(ticker, 1.0)
 
 
 def format_crypto_amount(usd: float, currency: str) -> str:
-    """Return amount string like '0.00105 BTC' or '100 USDT'."""
-    price = get_crypto_price(currency)
-    if price is None or price <= 0:
-        return f"${usd} USD"
+    """Return human-readable crypto amount, e.g. '0.005263 ETH'."""
+    ticker = currency.split()[0]
+    price  = get_crypto_price(currency)
     amount = usd / price
-    # Format precision based on magnitude
-    if amount >= 100:
+
+    if ticker in ("USDT", "USDC"):
+        return f"{int(usd)} {ticker}"
+    elif amount >= 1000:
         fmt = f"{amount:.2f}"
     elif amount >= 1:
         fmt = f"{amount:.4f}"
-    elif amount >= 0.001:
+    elif amount >= 0.0001:
         fmt = f"{amount:.6f}"
     else:
         fmt = f"{amount:.8f}"
-    # Extract ticker symbol
-    sym = currency.split()[0]  # "USDT TRC-20" → "USDT"
-    return f"{fmt} {sym}"
+
+    return f"{fmt} {ticker}"
 
 
 def api_requisites_text(pack_key: str, currency: str, usd: int | None = None,

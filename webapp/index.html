@@ -1644,23 +1644,31 @@ const WALLETS = [
   { name: 'TON',          network: 'TON',                 cgId: 'the-open-network', symbol: 'TON', rate: 4.8},
 ];
 
-// Fetch live prices from CoinGecko (free, no key needed)
+// Fetch live prices from Binance (no key, no rate limit)
 async function fetchLivePrices(){
-  const ids = WALLETS.filter(w=>w.cgId).map(w=>w.cgId).join(',');
-  try {
-    const r = await fetch(
-      `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`,
-      { signal: AbortSignal.timeout(4000) }
-    );
-    const data = await r.json();
-    WALLETS.forEach(w => {
-      if(w.cgId && data[w.cgId]?.usd){
-        w.rate = data[w.cgId].usd;
+  const pairs = [
+    ['TRX',  'TRXUSDT'],
+    ['ETH',  'ETHUSDT'],
+    ['BNB',  'BNBUSDT'],
+    ['BTC',  'BTCUSDT'],
+    ['SOL',  'SOLUSDT'],
+    ['TON',  'TONUSDT'],
+  ];
+  await Promise.allSettled(pairs.map(async ([ticker, sym]) => {
+    try {
+      const r = await fetch(
+        `https://api.binance.com/api/v3/ticker/price?symbol=${sym}`,
+        { signal: AbortSignal.timeout(5000) }
+      );
+      const d = await r.json();
+      const price = parseFloat(d.price);
+      if(price > 0){
+        WALLETS.forEach(w => {
+          if(w.symbol === ticker) w.rate = price;
+        });
       }
-    });
-  } catch(e){
-    // Keep fallback rates
-  }
+    } catch(e){}
+  }));
 }
 
 function initCurrencyList(){
