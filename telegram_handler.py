@@ -177,7 +177,7 @@ def kb_api_packs() -> dict:
             f"{pack['label']}{badge}",
             f"api_pack:{key}", "primary"
         )])
-    rows.append([btn("Custom amount", "api_custom")])
+    rows.append([btn("Custom amount", "api_custom", "success")])
     rows.append([btn("Back to menu",  "back_main",  "primary")])
     return {"inline_keyboard": rows}
 
@@ -260,29 +260,55 @@ ABOUT = (
 
 
 def api_key_text() -> str:
-    rows = []
-    for key, pack in API_PACKS.items():
-        badge = f"  [{pack['badge']}]" if pack.get("badge") else ""
-        rows.append(f"${pack['price_usd']}  →  {pack['tokens_m']}M tokens{badge}")
-        rows.append(f"  {pack['desc']}")
-        rows.append("")
-    listing = "\n".join(rows).rstrip()
+    """Sent via sendRichMessage for native table support."""
     return (
-        "<b>API Key — prepaid tokens</b>\n\n"
-        "Get an Anthropic API key to use in your projects — "
-        "VS Code, Cursor, Claude Code, or any integration.\n\n"
-        "<b>How it works:</b>\n"
-        "<blockquote>"
-        "1. Choose a token pack\n"
-        "2. Pay with crypto\n"
-        "3. Receive your API key (<code>sk-ant-...</code>) within 30 min\n"
-        "4. Paste the key into your app or IDE"
-        "</blockquote>\n\n"
-        "<b>Packs:</b>\n"
-        f"<pre>{listing}</pre>\n\n"
-        f"<i>${API_PRICE_PER_1M}/1M tokens · minimum order ${API_MIN_USD}</i>\n\n"
+        "# API Key — prepaid tokens\n\n"
+        "Get an Anthropic API key for VS Code, Cursor, Claude Code, or any integration.\n\n"
+        "## How it works\n\n"
+        "> 1. Choose a token pack\n"
+        "> 2. Pay with crypto\n"
+        "> 3. Receive your API key (`sk-ant-...`) within 30 min\n"
+        "> 4. Paste the key into your app or IDE\n\n"
+        "## Packs\n\n"
+        "| Pack | Tokens | Per month | Best for |\n"
+        "| :--- | :---: | :---: | :--- |\n"
+        "| **$100** | ~12.5M | ~$100 | 6 months avg dev |\n"
+        "| **$200** | ~25M | ~$200 | 1 year avg dev |\n"
+        "| **$500** | ~65M | ~$500 | Heavy usage |\n\n"
+        "---\n\n"
+        f"*${API_PRICE_PER_1M}/1M tokens · minimum order ${API_MIN_USD}*\n\n"
         "Or enter a custom amount with the button below."
     )
+
+
+def _send_api_key_message(chat_id: int, reply_markup: dict) -> dict:
+    """Use sendRichMessage for native table; fallback to sendMessage."""
+    markdown = api_key_text()
+    result = api("sendRichMessage",
+        chat_id=chat_id,
+        rich_message={"markdown": markdown},
+        reply_markup=reply_markup
+    )
+    if not result.get("ok"):
+        # Fallback: plain text
+        plain = (
+            "<b>API Key — prepaid tokens</b>\n\n"
+            "Get an Anthropic API key for VS Code, Cursor, Claude Code.\n\n"
+            "<b>Packs:</b>\n"
+            "<pre>"
+            "$100  →  12.5M tokens\n"
+            "$200  →  25M tokens   [Popular]\n"
+            "$500  →  65M tokens   [Best value]"
+            "</pre>\n\n"
+            f"<i>${API_PRICE_PER_1M}/1M tokens · min ${API_MIN_USD}</i>"
+        )
+        result = api("sendMessage",
+            chat_id=chat_id,
+            text=plain,
+            parse_mode="HTML",
+            reply_markup=reply_markup
+        )
+    return result
 
 
 def api_pack_detail(pack_key: str) -> str:
@@ -296,31 +322,100 @@ def api_pack_detail(pack_key: str) -> str:
     )
 
 
+# ── Crypto price lookup ────────────────────────────────────────────────────────
+# CoinGecko IDs for currencies we support
+_CG_IDS: dict[str, str] = {
+    "TRX":          "tron",
+    "TRON (TRX)":   "tron",
+    "ETH":          "ethereum",
+    "BNB":          "binancecoin",
+    "BTC":          "bitcoin",
+    "SOL":          "solana",
+    "TON":          "the-open-network",
+}
+# Stablecoins — always 1:1
+_STABLE = {"USDT TRC-20", "USDT ERC-20", "USDC ERC-20", "USDT", "USDC"}
+
+# In-memory cache: {cg_id: (price, timestamp)}
+_price_cache: dict[str, tuple[float, float]] = {}
+_CACHE_TTL = 300  # 5 min
+
+
+def get_crypto_price(currency: str) -> float | None:
+    """Return USD price of 1 unit of currency. None = unknown/stable."""
+    import time
+    if currency in _STABLE:
+        return 1.0
+    cg_id = _CG_IDS.get(currency)
+    if not cg_id:
+        return None
+    now = time.time()
+    if cg_id in _price_cache:
+        price, ts = _price_cache[cg_id]
+        if now - ts < _CACHE_TTL:
+            return price
+    try:
+        r = httpx.get(
+            "https://api.coingecko.com/api/v3/simple/price",
+            params={"ids": cg_id, "vs_currencies": "usd"},
+            timeout=4
+        )
+        data = r.json()
+        price = data[cg_id]["usd"]
+        _price_cache[cg_id] = (price, now)
+        return price
+    except Exception:
+        # Return cached even if stale
+        if cg_id in _price_cache:
+            return _price_cache[cg_id][0]
+        return None
+
+
+def format_crypto_amount(usd: float, currency: str) -> str:
+    """Return amount string like '0.00105 BTC' or '100 USDT'."""
+    price = get_crypto_price(currency)
+    if price is None or price <= 0:
+        return f"${usd} USD"
+    amount = usd / price
+    # Format precision based on magnitude
+    if amount >= 100:
+        fmt = f"{amount:.2f}"
+    elif amount >= 1:
+        fmt = f"{amount:.4f}"
+    elif amount >= 0.001:
+        fmt = f"{amount:.6f}"
+    else:
+        fmt = f"{amount:.8f}"
+    # Extract ticker symbol
+    sym = currency.split()[0]  # "USDT TRC-20" → "USDT"
+    return f"{fmt} {sym}"
+
+
 def api_requisites_text(pack_key: str, currency: str, usd: int | None = None,
                         tokens_m: float | None = None) -> str:
     if pack_key.startswith("custom_") and usd:
-        label   = f"API Custom — ${usd}"
-        tok     = tokens_m or round(usd / API_PRICE_PER_1M, 1)
-        price   = usd
+        label = f"API Custom — ${usd}"
+        tok   = tokens_m or round(usd / API_PRICE_PER_1M, 1)
+        price = usd
     else:
-        pack    = API_PACKS[pack_key]
-        label   = pack["label"]
-        tok     = pack["tokens_m"]
-        price   = pack["price_usd"]
-    wallet = WALLETS[currency]
+        pack  = API_PACKS[pack_key]
+        label = pack["label"]
+        tok   = pack["tokens_m"]
+        price = pack["price_usd"]
+    wallet       = WALLETS[currency]
+    crypto_amount = format_crypto_amount(price, currency)
     return (
         f"<b>API Key payment</b>\n\n"
         f"<b>Pack:</b> {label}\n"
         f"<b>Tokens:</b> ~{tok}M\n"
-        f"<b>Amount:</b> <b>${price} USD</b> in {currency}\n"
+        f"<b>Amount:</b> <b>{crypto_amount}</b>  <i>(≈ ${price} USD)</i>\n"
         f"<b>Network:</b> {wallet['network']}\n\n"
         f"<b>Wallet address:</b>\n"
         f"<code>{wallet['address']}</code>\n\n"
-        "<blockquote>Send exactly via the network shown above.\n"
-        "After payment tap \"I have paid\" — "
+        "<blockquote>Send exactly the amount shown above via the network indicated.\n"
+        "After payment tap <b>\"I have paid\"</b> — "
         "your API key will arrive within 30 minutes.</blockquote>"
     )
-
 
 def plans_text() -> str:
     rows = []
@@ -353,12 +448,13 @@ def plan_detail_text(plan_key: str) -> str:
 
 
 def requisites_text(plan_key: str, currency: str) -> str:
-    plan   = PLANS[plan_key]
-    wallet = WALLETS[currency]
+    plan         = PLANS[plan_key]
+    wallet       = WALLETS[currency]
+    crypto_amount = format_crypto_amount(plan["price_usd"], currency)
     return (
         f"<b>Payment details</b>\n\n"
         f"<b>Plan:</b> {plan['label']}\n"
-        f"<b>Amount:</b> <b>${plan['price_usd']}</b> in {currency}\n"
+        f"<b>Amount:</b> <b>{crypto_amount}</b>  <i>(≈ ${plan['price_usd']} USD)</i>\n"
         f"<b>Network:</b> {wallet['network']}\n\n"
         f"<b>Wallet address:</b>\n"
         f"<code>{wallet['address']}</code>\n\n"
@@ -656,7 +752,8 @@ def _handle_callback(cb: dict) -> None:
 
     # ── API Key flow ──────────────────────────────────────────────────────────
     if data == "api_key":
-        replace(chat_id, msg_id, api_key_text(), reply_markup=kb_api_packs())
+        delete_msg(chat_id, msg_id)
+        _send_api_key_message(chat_id, kb_api_packs())
         return
 
     if data.startswith("api_pack:"):

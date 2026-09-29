@@ -670,12 +670,12 @@ body{
 
 <!-- ══ INPUT ═════════════════════════════════════════════════════════════════ -->
 <div class="input-area">
-  <div style="display:flex;gap:6px;justify-content:center;margin-bottom:8px;">
+  <div style="display:flex;gap:6px;justify-content:space-between;margin-bottom:8px;padding:0 4px;">
     <div class="input-upgrade">
       Free plan · <a href="#" onclick="openPaywall();return false;">Upgrade</a>
     </div>
     <div class="input-upgrade">
-      <a href="#" onclick="openApiCalc();return false;">API Key</a>
+      <span style="color:#555;">Get</span> <a href="#" onclick="openApiCalc();return false;">API Key</a>
     </div>
   </div>
   <div class="input-box">
@@ -1633,16 +1633,35 @@ function updateCalc(){
 
 /* ══════════════════════ CURRENCY SHEET ════════════════════════════════════ */
 const WALLETS = [
-  { name: 'USDT TRC-20',  network: 'TRON (TRC-20)',      rate: 1,        symbol: 'USDT' },
-  { name: 'USDT ERC-20',  network: 'Ethereum (ERC-20)',   rate: 1,        symbol: 'USDT' },
-  { name: 'USDC ERC-20',  network: 'Ethereum (ERC-20)',   rate: 1,        symbol: 'USDC' },
-  { name: 'TRX',          network: 'TRON',                rate: 0.13,     symbol: 'TRX'  },
-  { name: 'ETH',          network: 'Ethereum',            rate: 2500,     symbol: 'ETH'  },
-  { name: 'BNB',          network: 'BNB Smart Chain',     rate: 580,      symbol: 'BNB'  },
-  { name: 'BTC',          network: 'Bitcoin',             rate: 95000,    symbol: 'BTC'  },
-  { name: 'SOL',          network: 'Solana',              rate: 145,      symbol: 'SOL'  },
-  { name: 'TON',          network: 'TON',                 rate: 4.8,      symbol: 'TON'  },
+  { name: 'USDT TRC-20',  network: 'TRON (TRC-20)',      cgId: null,       symbol: 'USDT', rate: 1    },
+  { name: 'USDT ERC-20',  network: 'Ethereum (ERC-20)',   cgId: null,       symbol: 'USDT', rate: 1    },
+  { name: 'USDC ERC-20',  network: 'Ethereum (ERC-20)',   cgId: null,       symbol: 'USDC', rate: 1    },
+  { name: 'TRX',          network: 'TRON',                cgId: 'tron',     symbol: 'TRX',  rate: 0.13 },
+  { name: 'ETH',          network: 'Ethereum',            cgId: 'ethereum', symbol: 'ETH',  rate: 2500 },
+  { name: 'BNB',          network: 'BNB Smart Chain',     cgId: 'binancecoin', symbol: 'BNB', rate: 580},
+  { name: 'BTC',          network: 'Bitcoin',             cgId: 'bitcoin',  symbol: 'BTC',  rate: 95000},
+  { name: 'SOL',          network: 'Solana',              cgId: 'solana',   symbol: 'SOL',  rate: 145  },
+  { name: 'TON',          network: 'TON',                 cgId: 'the-open-network', symbol: 'TON', rate: 4.8},
 ];
+
+// Fetch live prices from CoinGecko (free, no key needed)
+async function fetchLivePrices(){
+  const ids = WALLETS.filter(w=>w.cgId).map(w=>w.cgId).join(',');
+  try {
+    const r = await fetch(
+      `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`,
+      { signal: AbortSignal.timeout(4000) }
+    );
+    const data = await r.json();
+    WALLETS.forEach(w => {
+      if(w.cgId && data[w.cgId]?.usd){
+        w.rate = data[w.cgId].usd;
+      }
+    });
+  } catch(e){
+    // Keep fallback rates
+  }
+}
 
 function initCurrencyList(){
   const list = document.getElementById('currList');
@@ -1672,10 +1691,13 @@ function initCurrencyList(){
   updateCurrencyAmounts();
 }
 
-function openCurrencySheet(){
-  updateCurrencyAmounts();
+async function openCurrencySheet(){
+  updateCurrencyAmounts(); // show with cached rates first
   document.getElementById('currBackdrop2').classList.add('open');
   document.getElementById('currSheet').classList.add('open');
+  // then fetch live and update
+  await fetchLivePrices();
+  updateCurrencyAmounts();
 }
 function updateCurrencyAmounts(){
   const usd = apiMode === 'usd'
