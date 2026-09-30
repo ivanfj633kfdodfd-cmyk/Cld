@@ -99,10 +99,8 @@ body{
   display:flex;align-items:center;justify-content:center;
   gap:6px;
   background:#1e1e1e;
-  border-radius:20px;
-  padding:6px 16px;
-  margin:0 auto 8px;
-  width:fit-content;
+  border-radius:8px;
+  padding:7px 14px;
   font-size:12.5px;color:#888;
 }
 .input-upgrade a{color:#d4956a;font-weight:600;text-decoration:none;}
@@ -670,12 +668,12 @@ body{
 
 <!-- ══ INPUT ═════════════════════════════════════════════════════════════════ -->
 <div class="input-area">
-  <div style="display:flex;gap:6px;justify-content:space-between;margin-bottom:8px;padding:0 4px;">
-    <div class="input-upgrade">
+  <div style="display:flex;gap:6px;justify-content:space-between;align-items:stretch;margin-bottom:8px;padding:0 2px;">
+    <div class="input-upgrade" style="flex:1;justify-content:flex-start;">
       Free plan · <a href="#" onclick="openPaywall();return false;">Upgrade</a>
     </div>
-    <div class="input-upgrade">
-      <span style="color:#555;">Get</span> <a href="#" onclick="openApiCalc();return false;">API Key</a>
+    <div class="input-upgrade" style="flex:1;justify-content:flex-end;">
+      <span style="color:#555;">Get</span>&nbsp;<a href="#" onclick="openApiCalc();return false;">API Key</a>
     </div>
   </div>
   <div class="input-box">
