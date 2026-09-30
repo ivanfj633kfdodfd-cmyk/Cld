@@ -36,9 +36,12 @@ GITHUB_BRANCH     = "main"
 
 # List of bots to create.
 # Each entry: (project_name, bot_token, bot_username)
+# bot_username will be auto-detected from getMe if left as empty string
 BOTS = [
-    # ("cld-bot2", "7XXXXXXXXX:AAH...", "ClaudeBot2"),
-    # ("cld-bot3", "7XXXXXXXXX:AAH...", "ClaudeBot3"),
+    ("cld-claude-1", "8529665113:AAGqdipC6dag_5Fi6YFyvdDwa6k2efxS0uY", ""),
+    ("cld-claude-2", "8766725182:AAFIaD7Ts_yyoZ9W43ngYErxZmd1dxMET1M", ""),
+    ("cld-claude-3", "8770733757:AAHH7zt5moVzbtC9fGfr_cX50vRl1xRv1lE", ""),
+    ("cld-claude-4", "8771147402:AAELClns7F3FjPohIrHySPdeTASEt2aCQpg", ""),
 ]
 
 WEBHOOK_PATH = "/webhook"
@@ -190,14 +193,16 @@ def main():
     print(f"  Found {len(source_envs)} env vars\n")
 
     for i, (proj_name, bot_token, bot_username) in enumerate(BOTS):
-        print(f"[{i+1}/{len(BOTS)}] {proj_name} (@{bot_username})")
+        print(f"[{i+1}/{len(BOTS)}] {proj_name}")
 
-        # Validate token
+        # Validate token and get username automatically
         info = get_me(bot_token)
         if not info:
             print("  [SKIP] Invalid token\n")
             continue
-        print(f"  Bot: @{info.get('username')} — {info.get('first_name')}")
+        if not bot_username:
+            bot_username = info.get("username", proj_name)
+        print(f"  Bot: @{bot_username} — {info.get('first_name')}")
 
         # Create project
         print("  Creating Vercel project...")

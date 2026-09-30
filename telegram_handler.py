@@ -908,11 +908,11 @@ def _handle_callback(cb: dict) -> None:
 
     if data.startswith("plan:"):
         plan_key = data.split(":", 1)[1]
-        plan = PLANS[plan_key]
+        plan  = PLANS[plan_key]
         feats = "\n".join(f"| ✓ | {f} |" for f in plan["features"])
+        badge = f"  [{plan['badge']}]" if plan.get("badge") else ""
         md = (
-            f"# {plan['label']} — ${plan['price_usd']}/mo\n\n"
-            f"{plan['desc']}\n\n"
+            f"# {plan['label']} — ${plan['price_usd']}/mo{badge}\n\n"
             "## Includes\n\n"
             "| | Feature |\n"
             "| :---: | :--- |\n"
