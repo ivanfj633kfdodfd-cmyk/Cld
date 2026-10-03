@@ -38,10 +38,10 @@ GITHUB_BRANCH     = "main"
 # Each entry: (project_name, bot_token, bot_username)
 # bot_username will be auto-detected from getMe if left as empty string
 BOTS = [
-    ("cld-claude-1", "8529665113:AAGqdipC6dag_5Fi6YFyvdDwa6k2efxS0uY", ""),
-    ("cld-claude-2", "8766725182:AAFIaD7Ts_yyoZ9W43ngYErxZmd1dxMET1M", ""),
-    ("cld-claude-3", "8770733757:AAHH7zt5moVzbtC9fGfr_cX50vRl1xRv1lE", ""),
-    ("cld-claude-4", "8771147402:AAELClns7F3FjPohIrHySPdeTASEt2aCQpg", ""),
+    # ("cld-claude-1", "TOKEN_HERE", ""),
+    # ("cld-claude-2", "TOKEN_HERE", ""),
+    # ("cld-claude-3", "TOKEN_HERE", ""),
+    # ("cld-claude-4", "TOKEN_HERE", ""),
 ]
 
 WEBHOOK_PATH = "/webhook"
