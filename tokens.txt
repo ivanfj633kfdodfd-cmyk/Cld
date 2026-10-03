@@ -1,6 +1,0 @@
-# Paste your bot tokens here, one per line.
-# Lines starting with # are ignored.
-#
-# Example:
-# 7123456789:AAHd...
-# 7987654321:AABc...
