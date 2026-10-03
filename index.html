@@ -1,0 +1,2793 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PvZ SHOP</title>
+<style>  
+body { 
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #17212b;
+}
+.screen {
+    display: none;
+    height: 100vh;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+    #price_usdt {
+          color: #17212b;
+          display: none;
+    }
+
+
+
+
+
+.marquee-container {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 5px 0;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.marquee-content {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    color: #6ab2f2;
+    animation: scroll 30s linear infinite;
+    white-space: nowrap;
+}
+
+.marquee-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 15px;
+    flex-shrink: 0;
+}
+
+.marquee-item img {
+    height: 30px;
+}
+
+ 
+    
+
+
+
+#card-feed {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+}
+
+
+
+.blocked-photo {
+    position: relative;
+    width: 18vw;
+    max-width: 100px;
+    height: 18vw;
+    max-height: 100px;
+    border-radius: 4px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s;
+    background: #253643;
+    flex-shrink: 0;
+}
+
+.blocked-photo:hover {
+    transform: scale(1.05);
+}
+
+.blocked-photo img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: blur(15px);
+    display: block;
+}
+
+.blocked-photo .noise-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.blocked-photo .pixel {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 50%;
+}
+
+
+
+
+
+
+.blocked-text-wrapper {
+    margin-bottom: 15px;
+    max-width: 95%;
+    color:#6ab2f2;
+    margin-left: auto;    /* ДОБАВЬ ЭТО */
+    margin-right: auto;   /* ДОБАВЬ ЭТО */
+    text-align: center;
+}
+
+.blocked-text {
+    position: relative;
+    display: block;           /* ИЗМЕНИ с inline на block */
+    padding: 2px 0;
+    color: transparent;
+    background: rgba(255, 255, 255, 0.15);
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.2s;
+    line-height: 1.6;
+    border-radius: 3px;
+    text-align: center;       /* ДОБАВЬ ЭТО */
+}
+
+.blocked-text:hover {
+    background: #555555;
+}
+
+.blocked-text .text-pixel {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 2;
+    text-align: center;
+}
+
+    
+
+
+    .sbp-link {
+    color: #17212b;       /* цвет текста */
+    font-size: 12px;      /* размер */
+    text-decoration: none; /* убрать подчёркивание */
+    background: #6ab2f2;
+    max-width: 70vw;
+    padding: 10px;
+    border-radius: 4px;
+    word-wrap: break-word;
+    text-align: center;
+    
+           
+}
+    
+.active { display: block; }
+
+#pay_title {
+  display: none;
+}
+
+#promo_input::placeholder {
+    color: #6ab2f2;
+    text-transform: uppercase;
+    opacity: 1;
+}
+
+#slideshow-container {
+    position: relative;
+    width: 80vw;
+    max-width: 400px;
+    height: 60vw;
+    max-height: 300px;
+    margin: 5px auto;
+}
+
+.gold-glow {
+    color: #ffdd77 !important;
+    text-shadow:
+        0 0 6px #ffdd77,
+        0 0 12px #ffbb22,
+        0 0 20px #ffaa00;
+    transition: 0.3s ease;
+}
+
+.tooltip-glass {
+    position: fixed;
+    left: 50%;
+    width: 65vw;
+    top: 40%;
+    transform: translateX(-50%);
+    padding: 10px 10px;
+    border-radius: 4px;
+    backdrop-filter: blur(12px);
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    font-size: 14px;
+    animation: fadeIn 0.25s ease;
+    z-index: 99999;
+    text-align: center;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translate(-50%, -20px); }
+    to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.confetti-piece {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    opacity: 0.9;
+    border-radius: 2px;
+}
+
+.glass-status-btn {
+    padding: 2px;
+    width: 63vw;
+    max-width: 63vw;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 4px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    position: relative;
+    overflow: hidden;
+}
+
+.glass-status-btn::after {
+    content: "";
+    position: absolute;
+    top: -150%;
+    left: -150%;
+    width: 300%;
+    height: 300%;
+    background: linear-gradient(
+        45deg,
+        rgba(255,255,255,0) 0%,
+        rgba(255,255,255,0.6) 25%,
+        rgba(255,255,255,0) 55%
+    );
+    transform: rotate(15deg);
+    animation: shine-move 3s linear infinite;
+    pointer-events: none;
+}
+
+@keyframes shine-move {
+    from { transform: translateX(-100%) rotate(15deg); }
+    to   { transform: translateX(100%) rotate(15deg); }
+}
+
+.slide {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 12px;
+    transform: translate(-50%, -50%) scale(0.9);
+    opacity: 0;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    transform-origin: center center;
+}
+
+.slide.active {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.slide.out {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.1);
+}
+
+.button {
+    width: 75vw;
+    margin: 20px auto 0;
+    padding: 15px;
+    font-size: 18px;
+    text-align: center;
+    background: #2f6ea5;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    display: block;
+}
+
+.tooltip {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+    color: #fff;
+}
+
+.feed {
+    height: 400px;
+    overflow-y: auto;
+    position: relative;
+    scroll-behavior: smooth;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    /* Фейдаут сверху и снизу */
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%);
+}
+
+
+.feed-item {
+    background: #1d2b3a;
+    color: white;
+    padding: 15px;
+    margin-bottom: 12px;
+    border-radius: 10px;
+    border: 1px solid #6ab2f2;
+    font-size: 16px;
+}
+
+
+.tooltiptext {
+    visibility: hidden;
+    width: 250px;
+    padding: 10px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #fff;
+    text-align: center;
+    font-size: 14px;
+    position: fixed;
+    top: 55%;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.7s, transform 0.7s;
+}
+
+.tooltip.show .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+}
+
+.qr-glow-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+
+
+.photooption {
+    background: #133648;
+    padding: 12px;
+    border-radius: 12px;
+    margin-top: 15px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    cursor: pointer;
+}
+    
+
+.option {
+    scroll-snap-align: start; /* Добавь это */
+    background: #253648;
+    padding: 12px;
+    border-radius: 12px;
+    margin-top: 15px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    cursor: pointer;
+}
+
+.option img {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+}
+
+.desc {
+    font-size: 13px;
+    margin-top: 4px;
+    color: white;
+}
+
+#loader {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: #17212b;
+    display: none;
+    flex-direction: column; /* ДОБАВЬ ЭТУ СТРОКУ */
+    color: white;
+    justify-content: center;
+    align-items: center;
+    font-size: 22px;
+}
+
+#payment {
+    font-size: 15px;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    color: white;
+}
+
+#payment.active {
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.address-box {
+    max-width: 65vw;
+    padding: 8px;
+    border: 2px dashed #6ab2f2;
+    border-radius: 4px;
+    word-wrap: break-word;
+    text-align: center;
+    font-size: 12px;
+    cursor: pointer;
+}
+.sbp-active {
+    max-width: 65vw;
+    padding: 8px;
+    border: 2px #6ab2f2;
+    border-radius: 4px;
+    word-wrap: break-word;
+    text-align: center;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+/* Зелёная кнопка оплаты СБП */
+.sbp-pay-btn {
+    display: block;
+    width: 250px;
+    margin: 0 auto;
+    padding: 14px 10px;
+    background: #2ea84f;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+    transition: background 0.2s;
+}
+.sbp-pay-btn:hover { background: #27963f; }
+.sbp-pay-btn:active { background: #1e7a32; }
+
+/* Фоллбек плашка (ручные реквизиты) */
+.sbp-fallback {
+    width: 63vw;
+    max-width: 63vw;
+    margin: 0 auto;
+    display: block;
+    padding: 8px 10px;
+    background: #7a6200;
+    border: 1px solid #f5c842;
+    border-radius: 4px;
+    color: #f5c842;
+    font-size: 14px;
+    font-weight: bold;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.sbp-fallback:hover { background: #8a7000; }
+.sbp-fallback a {
+    color: #f5c842;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.copied {
+    background: #6ab2f2;
+    border-color: #00aa00;
+    transition: 1s;
+}
+
+
+
+
+
+
+.location-selector {
+    width: 75vw;
+    max-width: 400px;
+    margin: 10px auto;
+    text-align: center;
+}
+
+.location-select {
+    width: 100%;
+    padding: 12px;
+    font-size: 14px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    border: 1px solid #6ab2f2;
+    background: #17212b;
+    color: #6ab2f2;
+    outline: none;
+    appearance: none;
+    background-image: url('data:image/svg+xml;utf8,<svg fill="%236ab2f2" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    cursor: pointer;
+}
+
+.location-select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #1d2b3a;
+}
+
+.location-select option {
+    background: #17212b;
+    color: #6ab2f2;
+}
+
+    .product-name {
+    color: #6ab2f2;
+    font-weight: bold;
+    }
+
+
+#loader-text {
+    color: #6ab2f2;
+    font-size: 18px;
+    margin-top: 15px;
+    font-weight: bold;
+    animation: fadeInOut 0.5s ease-in-out;
+}
+
+@keyframes fadeInOut {
+    0% { opacity: 0; transform: translateY(-10px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+    
+.product-price {
+    color: #ffd700;
+    font-weight: bold;
+}
+
+    .order-id {
+    color: #6ab2f2;
+    font-weight: bold;
+   }
+
+#currency {
+    width: 65vw;
+    padding: 12px;
+    font-size: 14px;
+    border-radius: 6px;
+    margin-bottom:10px;
+    border: 1px solid #6ab2f2;
+    background: #17212b;
+    color: #6ab2f2;
+    outline: none;
+    appearance: none;
+    background-image: url('data:image/svg+xml;utf8,<svg fill="%236ab2f2" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+}
+</style>
+</head>
+<body>
+
+<div id="loader">
+    <img src="https://github.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/blob/main/Objects/Hourglass%20Not%20Done.webp?raw=true" style="width:200px;">
+    <div id="loader-text" style="color: #6ab2f2; font-size: 18px; margin-top: 15px; font-weight: bold;">Загрузка...</div>
+</div>
+
+<!-- SCREEN 1 -->
+<div id="welcome" class="screen active" style="text-align:center;">
+    <div style="width:100%; text-align:center;">
+        <br><br><br>
+        <div id="slideshow-container">
+    <video autoplay loop muted playsinline class="slide active" style="width: 100%; height: 100%; object-fit: contain;">
+        <source src="https://github.com/HuntersNetPlus/PvZ/raw/main/LowWebpRaslerPVZ.webm" type="video/webm">
+        Ваш браузер не поддерживает видео.
+    </video>
+</div>
+    </div>
+    
+    <div style="text-align:center; color:white">
+        <div style="color:#6ab2f2"><b>Чувствуй себя как дома!</b></div><br>
+        PvZ Shop всегда дарит хорошее настроение и незабываемые эмоции. <p><b>Быстро, анонимно и круглосуточно.</b></p>
+    </div>
+
+    <!-- БЛОК ВЫБОРА ГОРОДА И МЕТРО -->
+    <div class="location-selector">
+        <select id="citySelect" class="location-select">
+            <option value="">Выберите город</option>
+            <option value="moscow">Москва</option>
+            <option value="spb">Санкт-Петербург</option>
+            <option value="kazan">Казань</option>
+            <option value="novgorod">Нижний Новгород</option>
+            <option value="samara">Самара</option>
+            <option value="novosib">Новосибирск</option>
+            <option value="ekb">Екатеринбург</option>
+        </select>
+
+        <select id="metroSelect" class="location-select" disabled>
+            <option value="">Сначала выберите город</option>
+        </select>
+    </div>
+
+    <button class="button" id="welcomeBtn" disabled style="opacity: 0.5;">Перейти в магазин</button>
+</div>
+
+
+
+
+
+
+
+
+
+    
+
+<!-- SCREEN 2 -->
+<div id="choose" class="screen">
+
+<!-- СТРОКА -->
+
+
+<div class="marquee-container">
+    <div class="marquee-content" id="marquee">
+        <div class="marquee-item">
+            <img src="https://github.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/blob/main/Objects/Money%20With%20Wings.webp?raw=true" alt="">
+            <span>Нужны деньги? Пиши оператору, у нас есть для тебя предложение!</span>
+        </div>
+        <div class="marquee-item">
+            <img src="https://github.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/blob/main/Objects/Money%20Bag.webp?raw=true" alt="">
+            <span>Приглашай друзей и получай до 80% от суммы их покупок!</span>
+        </div>
+        <div class="marquee-item">
+            <img src="https://github.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/blob/main/Objects/Printer.webp?raw=true" alt="">
+            <span>Нужен рецептурный бланк? Пиши оператору - сделаем!</span>
+        </div>
+        
+        <!-- Дубликат для бесшовной прокрутки -->
+        <div class="marquee-item">
+            <img src="https://github.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/blob/main/Objects/Money%20With%20Wings.webp?raw=true" alt="">
+            <span>Нужны деньги? Пиши оператору, у нас есть для тебя предложение!</span>
+        </div>
+        <div class="marquee-item">
+            <img src="https://github.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/blob/main/Objects/Money%20Bag.webp?raw=true" alt="">
+            <span>Приглашай друзей и получай до 80% от суммы их покупок!</span>
+        </div>
+        <div class="marquee-item">
+            <img src="https://github.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/blob/main/Objects/Printer.webp?raw=true" alt="">
+            <span>Нужен рецептурный бланк? Пиши оператору - сделаем!</span>
+        </div>
+    </div>
+</div>
+
+
+    
+    <img src="https://github.com/HuntersNetPlus/PvZ/blob/main/Gemini_Generated_Image_qobu9jqobu9jqobu%20(1).webp?raw=true" style="width:200px; display:block; margin:0 auto;">
+    
+    <div style="text-align:center; color:white; font-weight:bold;">
+        Витрина метро <span class="metro-text">—</span> (г. <span class="city-text">—</span>):
+    </div>
+    <div id="card-feed" class="feed">
+        
+
+        <!-- РАЗНОЕ -->  <!-- РАЗНОЕ -->  <!-- РАЗНОЕ -->  <!-- РАЗНОЕ -->  <!-- РАЗНОЕ -->  <!-- РАЗНОЕ -->  <!-- РАЗНОЕ -->  <!-- РАЗНОЕ -->  <!-- РАЗНОЕ --> 
+  
+        <!-- ZAS  1-->
+        <div class="option" data-name="ZAS [1гр]" data-price="44.3">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Zas.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">ZAS [1гр] <br>3 600 ₽</div>
+            <div class="desc">Оригинальные ZAS-капсулы [MIX]. Эйфоричный и длительный эффект, разный цвет капсул - разная дозировка. </div>
+        </div>
+    </div>
+           <!-- ZAS  2-->
+        <div class="option" data-name="ZAS [2гр]" data-price="94.5">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Zas.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">ZAS [2гр] <br>7 400 ₽</div>
+            <div class="desc">Оригинальные ZAS-капсулы [MIX]. Эйфоричный и длительный эффект, разный цвет капсул - разная дозировка. </div>
+        </div>
+    </div>
+           <!-- ZAS 3 -->
+        <div class="option" data-name="ZAS [3гр]" data-price="125.7">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Zas.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">ZAS [3гр] <br>9 630 ₽</div>
+            <div class="desc">Оригинальные ZAS-капсулы [MIX]. Эйфоричный и длительный эффект, разный цвет капсул - разная дозировка. </div>
+        </div>
+    </div>
+   <!-- ZAS  5-->
+        <div class="option" data-name="ZAS [5гр]" data-price="189.4">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Zas.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">ZAS [5гр] <br>14 400 ₽</div>
+            <div class="desc">Оригинальные ZAS-капсулы [MIX]. Эйфоричный и длительный эффект, разный цвет капсул - разная дозировка. </div>
+        </div>
+    </div>
+
+  <!-- MDMA-->
+        <div class="option" data-name="Экстази Dubai Bling [3гр]" data-price="189.4">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Ext1.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Экстази Dubai Bling [3 гр] <br>14 465 ₽</div>
+            <div class="desc">Всплеск чистого, безусловного счастья. Открой сердце и почувствуй настоящую эмпатию и связь с каждым. Идеально для вечеринки, чтобы раствориться в музыке и любви. Твоя лучшая ночь гарантирована.</div>
+        </div>
+    </div>
+ <!-- MDMA-->
+        <div class="option" data-name="Экстази Louis Vuitton [3гр]" data-price="183.3">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Ext1.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Экстази Louis Vuitton [3гр] <br>14 015 ₽</div>
+            <div class="desc">Всплеск чистого, безусловного счастья. Открой сердце и почувствуй настоящую эмпатию и связь с каждым. Идеально для вечеринки, чтобы раствориться в музыке и любви. Твоя лучшая ночь гарантирована.</div>
+        </div>
+    </div>
+
+<!-- MDMA-->
+        <div class="option" data-name="Экстази MIX [3гр]" data-price="189.4">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Ext1.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Экстази MIX [3гр] <br>14 400 ₽</div>
+            <div class="desc">Всплеск чистого, безусловного счастья. Открой сердце и почувствуй настоящую эмпатию и связь с каждым. Идеально для вечеринки, чтобы раствориться в музыке и любви. Твоя лучшая ночь гарантирована.</div>
+        </div>
+    </div>
+<!-- БУТИК-->
+  <div class="option" data-name="Бутират GHB [150 мл]" data-price="68/35">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/But1.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Бутират GHB [150 мл] <br>5 220 ₽</div>
+            <div class="desc"> Наполни себя эйфорией и теплом! Идеальное расслабление и уход от проблем. Создает безграничное веселье и помогает раскрыться в любой компании.</div>
+        </div>
+    </div>
+<!-- КРЕК-->
+  <div class="option" data-name="Крек [1 гр]" data-price="201.4">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Crack1.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Крек [1 гр] <br>15 400 ₽</div>
+            <div class="desc"> Максимальная концентрация удовольствия в одном камне. Взрывная волна эйфории и чистейший, моментальный приход, который ты почувствуешь до костей. Самый мощный рывок энергии, который только возможен!</div>
+        </div>
+    </div>
+
+        
+        
+          <!-- АПТЕКА --> <!-- АПТЕКА --> <!-- АПТЕКА --> <!-- АПТЕКА --> <!-- АПТЕКА --> <!-- АПТЕКА --> <!-- АПТЕКА --> <!-- АПТЕКА --> <!-- АПТЕКА --> <!-- АПТЕКА --> 
+         <!-- XAN -->
+    <div class="option" data-name="Xanax [10 гр]" data-price="72">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Xan1.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Xanax [10 гр] <br>5 500 ₽</div>
+            <div class="desc">Идеально для того, чтобы отключить негативные мысли и расслабить тело. Приятное головокружение и повышенная общительность. Вы чувствуете себя уверенно и безмятежно.</div>
+        </div>
+    </div>
+<!-- ЛИРИКА -->
+         <div class="option" data-name="Лирика [10 гр]" data-price="61.2">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Lir1.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Лирика [10 гр] <br>4 680 ₽</div>
+            <div class="desc">Идеально для того, чтобы отключить негативные мысли и расслабить тело. Приятное головокружение и повышенная общительность. Вы чувствуете себя уверенно и безмятежно.</div>
+        </div>
+    </div>
+
+<!-- МЕФ --><!-- МЕФ --><!-- МЕФ --><!-- МЕФ --><!-- МЕФ --><!-- МЕФ --><!-- МЕФ --><!-- МЕФ --><!-- МЕФ --><!-- МЕФ --><!-- МЕФ --><!-- МЕФ -->
+        
+    <!-- Товар 3 -->
+    <div class="option" data-name="Мефедрон [1 гр]" data-price="52.5">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Crys2.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Мефедрон [1 гр] <br>3 450</div>
+            <div class="desc">Белоснежные VHQ кристаллы без запаха и примесей. Легкая и мощная волна эйфории. Почувствуй, как напряжение уходит, а тело наполняется нежным теплом когда ты становишься центром притяжения.</div>
+        </div>
+    </div>
+        
+<!-- Товар 4 -->
+    <div class="option" data-name="Мефедрон [2 гр]" data-price="81.5">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Crys2.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Мефедрон [2 гр] <br>6 230 ₽</div>
+            <div class="desc">Белоснежные VHQ кристаллы без запаха и примесей. Легкая и мощная волна эйфории. Почувствуй, как напряжение уходит, а тело наполняется нежным теплом когда ты становишься центром притяжения.</div>
+        </div>
+    </div>
+
+        <!-- Товар 5 -->
+    <div class="option" data-name="Мефедрон [3 гр]" data-price="119.4">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Crys2.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Мефедрон [3 гр] <br>9 100 ₽</div>
+            <div class="desc">Белоснежные VHQ кристаллы без запаха и примесей. Легкая и мощная волна эйфории. Почувствуй, как напряжение уходит, а тело наполняется нежным теплом когда ты становишься центром притяжения.</div>
+        </div>
+    </div>
+
+        <!-- Товар 5 -->
+    <div class="option" data-name="Мефедрон [4 гр]" data-price="150.5">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Crys2.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Мефедрон [4 гр] <br>11 500 ₽</div>
+            <div class="desc">Белоснежные VHQ кристаллы без запаха и примесей. Легкая и мощная волна эйфории. Почувствуй, как напряжение уходит, а тело наполняется нежным теплом когда ты становишься центром притяжения.</div>
+        </div>
+    </div>
+
+        <!-- Товар 5 -->
+    <div class="option" data-name="Мефедрон [5 гр]" data-price="199.5">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Crys2.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Мефедрон [5 гр] <br>15 240 ₽</div>
+            <div class="desc">Белоснежные VHQ кристаллы без запаха и примесей. Легкая и мощная волна эйфории. Почувствуй, как напряжение уходит, а тело наполняется нежным теплом когда ты становишься центром притяжения.</div>
+        </div>
+    </div>
+
+<!-- Товар 5 -->
+    <div class="option" data-name="Мефедрон (мука) [1 гр]" data-price="52.5">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/MF1.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Мефедрон (мука) [1 гр] <br>3 620 ₽</div>
+            <div class="desc">Белоснежная VHQ мука без запаха и примесей. Легкая и мощная волна эйфории. Почувствуй, как напряжение уходит, а тело наполняется нежным теплом когда ты становишься центром притяжения.</div>
+        </div>
+    </div>
+  <!-- Товар 5 -->
+    <div class="option" data-name="Мефедрон (мука) [5 гр]" data-price="192.4">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/MF1.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Мефедрон (мука) [5 гр] <br>14 730 ₽</div>
+            <div class="desc">Белоснежная VHQ мука без запаха и примесей. Легкая и мощная волна эйфории. Почувствуй, как напряжение уходит, а тело наполняется нежным теплом когда ты становишься центром притяжения.</div>
+        </div>
+    </div>
+        
+
+          <!-- Товар 5 -->
+    <div class="option" data-name="Мефедрон [10 гр]" data-price="372.25">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Crys2.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Мефедрон [10 гр] <br>28 470 ₽</div>
+            <div class="desc">Белоснежные VHQ кристаллы без запаха и примесей. Легкая и мощная волна эйфории. Почувствуй, как напряжение уходит, а тело наполняется нежным теплом когда ты становишься центром притяжения.</div>
+        </div>
+    </div>
+
+
+ <!-- КОКАИН --> <!-- КОКАИН --> <!-- КОКАИН --> <!-- КОКАИН --> <!-- КОКАИН --> <!-- КОКАИН --> <!-- КОКАИН --> <!-- КОКАИН --> <!-- КОКАИН -->
+        
+        <!-- Товар 6 -->
+    <div class="option" data-name="Кокаин [1 гр]" data-price="135">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Cock1.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Кокаин [1 гр] <br>10 320 ₽</div>
+            <div class="desc">Страна происхождения Колумбия. Ощути взрывной старт и абсолютный контроль над миром. Идеальная ясность ума, бесконечная уверенность и харизма, чтобы покорить ночь. Только для тех, кто не привык к компромиссам.</div>
+        </div>
+    </div>
+
+        <!-- Товар 7 -->
+    <div class="option" data-name="Кокаин [2 гр]" data-price="258.3">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Cock2.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Кокаин [2 гр] <br>19 740 ₽</div>
+            <div class="desc">Страна происхождения Боливия. Ощути взрывной старт и абсолютный контроль над миром. Идеальная ясность ума, бесконечная уверенность и харизма, чтобы покорить ночь. Только для тех, кто не привык к компромиссам.</div>
+        </div>
+    </div>
+
+        <!-- Товар 8 -->
+    <div class="option" data-name="Кокаин [3 гр]" data-price="367.7">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Cock1.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Кокаин [3 гр] <br>28 040 ₽</div>
+            <div class="desc">Страна происхождения Колумбия. Ощути взрывной старт и абсолютный контроль над миром. Идеальная ясность ума, бесконечная уверенность и харизма, чтобы покорить ночь. Только для тех, кто не привык к компромиссам.</div>
+        </div>
+    </div>
+
+        <!-- Товар 9 -->
+    <div class="option" data-name="Кокаин [4 гр]" data-price="473.2">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Cock2.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Кокаин [4 гр] <br>36 140 ₽</div>
+            <div class="desc">Страна происхождения Боливия. Ощути взрывной старт и абсолютный контроль над миром. Идеальная ясность ума, бесконечная уверенность и харизма, чтобы покорить ночь. Только для тех, кто не привык к компромиссам.</div>
+        </div>
+    </div>
+
+        <!-- Товар 10 -->
+    <div class="option" data-name="Кокаин [5 гр]" data-price="595.5">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Cock1.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Кокаин [5 гр] <br>45 500 ₽</div>
+            <div class="desc">Страна происхождения Колумбия. Ощути взрывной старт и абсолютный контроль над миром. Идеальная ясность ума, бесконечная уверенность и харизма, чтобы покорить ночь. Только для тех, кто не привык к компромиссам.</div>
+        </div>
+    </div>
+        
+<!-- Товар 10 -->
+    <div class="option" data-name="Кокаин [10 гр]" data-price="1165.32">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Cock1.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Кокаин [10 гр] <br>89 025 ₽</div>
+            <div class="desc">Страна происхождения Колумбия. Ощути взрывной старт и абсолютный контроль над миром. Идеальная ясность ума, бесконечная уверенность и харизма, чтобы покорить ночь. Только для тех, кто не привык к компромиссам.</div>
+        </div>
+    </div>
+
+
+<!-- АЛЬФА --><!-- АЛЬФА --><!-- АЛЬФА --><!-- АЛЬФА --><!-- АЛЬФА --><!-- АЛЬФА --><!-- АЛЬФА --><!-- АЛЬФА --><!-- АЛЬФА --><!-- АЛЬФА --><!-- АЛЬФА --><!-- АЛЬФА --><!-- АЛЬФА -->
+
+<!-- Товар 1 -->
+    <div class="option" data-name="A-PVP [1 гр]" data-price="44.5">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Crys2.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">A-PVP [1 гр] <br>3 400 ₽</div>
+            <div class="desc">Белые кристаллы. Отключи кнопку сна и усталости. Твоя активность и реакция будут на пике 24/7. Мощная волна удовольствия и драйва, которая сносит крышу.</div>
+        </div>
+    </div>
+
+<!-- Товар 1 -->
+    <div class="option" data-name="A-PVP [2 гр]" data-price="83.5">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Crys1.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">A-PVP [2 гр] <br>6 380 ₽</div>
+            <div class="desc">Синие кристаллы. Отключи кнопку сна и усталости. Твоя активность и реакция будут на пике 24/7. Мощная волна удовольствия и драйва, которая сносит крышу.</div>
+        </div>
+    </div>
+<!-- Товар 1 -->
+    <div class="option" data-name="A-PVP [3 гр]" data-price="141.6">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Crys2.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">A-PVP [3 гр] <br>10 820 ₽</div>
+            <div class="desc">Белые кристаллы. Отключи кнопку сна и усталости. Твоя активность и реакция будут на пике 24/7. Мощная волна удовольствия и драйва, которая сносит крышу.</div>
+        </div>
+    </div>
+<!-- Товар 1 -->
+    <div class="option" data-name="A-PVP [4 гр]" data-price="176.1">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Crys2.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">A-PVP [4 гр] <br>13 450 ₽</div>
+            <div class="desc">Белый кристалл. Отключи кнопку сна и усталости. Твоя активность и реакция будут на пике 24/7. Мощная волна удовольствия и драйва, которая сносит крышу.</div>
+        </div>
+    </div>
+<!-- Товар 1 -->
+    <div class="option" data-name="A-PVP [5 гр]" data-price="212.25">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Crys1.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">A-PVP [5 гр] <br>16 210 ₽</div>
+            <div class="desc">Синий кристалл. Отключи кнопку сна и усталости. Твоя активность и реакция будут на пике 24/7. Мощная волна удовольствия и драйва, которая сносит крышу.</div>
+        </div>
+    </div>
+        <!-- Товар 1 -->
+    <div class="option" data-name="A-PVP [10 гр]" data-price="386.75">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Crys2.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">A-PVP [10 гр] <br>9 540 ₽</div>
+            <div class="desc">Белый кристалл. Отключи кнопку сна и усталости. Твоя активность и реакция будут на пике 24/7. Мощная волна удовольствия и драйва, которая сносит крышу.</div>
+        </div>
+    </div>
+
+ <!-- ГАШИШ --><!-- ГАШИШ --><!-- ГАШИШ --><!-- ГАШИШ --><!-- ГАШИШ --><!-- ГАШИШ --><!-- ГАШИШ --><!-- ГАШИШ --><!-- ГАШИШ --><!-- ГАШИШ --><!-- ГАШИШ --><!-- ГАШИШ -->
+
+ <!-- Товар 1 -->
+    <div class="option" data-name="Гашиш Ice-o-Lator [1 гр]" data-price="43.47">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Gash.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Гашиш Ice-o-Lator [1 гр] <br>3 320 ₽</div>
+            <div class="desc">Штамп "Евро".Глубокий, насыщенный аромат и долгий, мягкий эффект. Идеально для медленного, философского вечера в кругу друзей. Просто отпусти мысли и наблюдай за миром.</div>
+        </div>
+    </div>
+<!-- Товар 1 -->
+    <div class="option" data-name="Гашиш Ice-o-Lator [3 гр]" data-price="126">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Gash.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Гашиш Ice-o-Lator [3 гр] <br>9 680</div>
+            <div class="desc">Штамп "Евро".Глубокий, насыщенный аромат и долгий, мягкий эффект. Идеально для медленного, философского вечера в кругу друзей. Просто отпусти мысли и наблюдай за миром.</div>
+        </div>
+    </div>
+<!-- Товар 1 -->
+    <div class="option" data-name="Гашиш Ice-o-Lator [5 гр]" data-price="208.1">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Gash.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Гашиш Ice-o-Lator [5 гр] <br>15 890 ₽</div>
+            <div class="desc">Штамп "Евро".Глубокий, насыщенный аромат и долгий, мягкий эффект. Идеально для медленного, философского вечера в кругу друзей. Просто отпусти мысли и наблюдай за миром.</div>
+        </div>
+    </div>
+<!-- Товар 1 -->
+    <div class="option" data-name="Гашиш Ice-o-Lator [1 гр]" data-price="47.79">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Gash.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Гашиш Ice-o-Lator [1 гр] <br>3 650 ₽</div>
+            <div class="desc">Штамп "Турбо".Глубокий, насыщенный аромат и долгий, мягкий эффект. Идеально для медленного, философского вечера в кругу друзей. Просто отпусти мысли и наблюдай за миром.</div>
+        </div>
+    </div>
+<!-- Товар 1 -->
+    <div class="option" data-name="Гашиш Ice-o-Lator [3 гр]" data-price="143.35">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Gash.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Гашиш Ice-o-Lator [3 гр] <br>10 950 ₽</div>
+            <div class="desc">Штамп "Турбо".Глубокий, насыщенный аромат и долгий, мягкий эффект. Идеально для медленного, философского вечера в кругу друзей. Просто отпусти мысли и наблюдай за миром.</div>
+        </div>
+    </div>
+<!-- Товар 1 -->
+    <div class="option" data-name="Гашиш Ice-o-Lator [5 гр]" data-price="225.85">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Gash.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Гашиш Ice-o-Lator [5 гр] <br>17 250 ₽</div>
+            <div class="desc">Штамп "Турбо".Глубокий, насыщенный аромат и долгий, мягкий эффект. Идеально для медленного, философского вечера в кругу друзей. Просто отпусти мысли и наблюдай за миром.</div>
+        </div>
+    </div>
+<!-- Товар 1 -->
+    <div class="option" data-name="Гашиш Mercedes Benz [1 гр]" data-price="40.5">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Gash.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Гашиш Mercedes Benz [1 гр] <br>3 100 ₽</div>
+            <div class="desc">Печать Mercedes Benz.Глубокий, насыщенный аромат и долгий, мягкий эффект. Идеально для медленного, философского вечера в кругу друзей. Просто отпусти мысли и наблюдай за миром.</div>
+        </div>
+    </div>
+
+<!-- Товар 1 -->
+    <div class="option" data-name="Гашиш Mercedes Benz [3 гр]" data-price="111.2">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Gash.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Гашиш Mercedes Benz [3 гр] <br>8 500 ₽</div>
+            <div class="desc">Печать Mercedes Benz.Глубокий, насыщенный аромат и долгий, мягкий эффект. Идеально для медленного, философского вечера в кругу друзей. Просто отпусти мысли и наблюдай за миром.</div>
+        </div>
+    </div>
+<!-- Товар 1 -->
+    <div class="option" data-name="Гашиш Mercedes Benz [5 гр]" data-price="193">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Gash.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Гашиш Mercedes Benz [5 гр] <br>14 740 ₽</div>
+            <div class="desc">Печать Mercedes Benz.Глубокий, насыщенный аромат и долгий, мягкий эффект. Идеально для медленного, философского вечера в кругу друзей. Просто отпусти мысли и наблюдай за миром.</div>
+        </div>
+    </div>
+      <!-- БОШКИ -->  <!-- БОШКИ -->  <!-- БОШКИ -->  <!-- БОШКИ -->  <!-- БОШКИ -->  <!-- БОШКИ -->  <!-- БОШКИ -->  <!-- БОШКИ -->  <!-- БОШКИ -->  <!-- БОШКИ -->  <!-- БОШКИ -->  <!-- БОШКИ -->  <!-- БОШКИ -->  <!-- БОШКИ -->  <!-- БОШКИ -->  
+
+         <!-- Товар1 -->
+         <div class="option" data-name="Бошки Amnesia Haze [1 гр]" data-price="36.5">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Weed.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Бошки Amnesia Haze [1 гр] <br>2 790 ₽</div>
+            <div class="desc">Кайф с запахом цитруса. Идеальное спокойствие и расслабление. Мягкое успокаивающее тело, приятный чилл. Забудь о стрессе, включи фильм и наслаждайся абсолютным покоем. Высший сорт для настоящего гурмана.</div>
+        </div>
+    </div>
+    <!-- Товар1 -->
+         <div class="option" data-name="Бошки Amnesia Haze [5 гр]" data-price="169.5">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Weed.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Бошки Amnesia Haze [5 гр] <br>12 950 ₽</div>
+            <div class="desc">Кайф с запахом цитруса. Идеальное спокойствие и расслабление. Мягкое успокаивающее тело, приятный чилл. Забудь о стрессе, включи фильм и наслаждайся абсолютным покоем. Высший сорт для настоящего гурмана.</div>
+        </div>
+    </div>
+           <!-- Товар1 -->
+         <div class="option" data-name="Бошки Critical Kush [1 гр]" data-price="33.9">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Weed2.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Бошки Critical Kush [1 гр] <br>2 590 ₽</div>
+            <div class="desc">Кайф с запахом цитруса. Идеальное спокойствие и расслабление. Мягкое успокаивающее тело, приятный чилл. Забудь о стрессе, включи фильм и наслаждайся абсолютным покоем. Высший сорт для настоящего гурмана.</div>
+        </div>
+    </div>
+    <!-- Товар1 -->
+         <div class="option" data-name="Бошки Critical Kush [3 гр]" data-price="95.1">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Weed2.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Бошки Critical Kush [3 гр] <br>7 270 ₽</div>
+            <div class="desc">Кайф с запахом цитруса. Идеальное спокойствие и расслабление. Мягкое успокаивающее тело, приятный чилл. Забудь о стрессе, включи фильм и наслаждайся абсолютным покоем. Высший сорт для настоящего гурмана.</div>
+        </div>
+    </div>
+
+    <!-- Товар1 -->
+         <div class="option" data-name="Бошки Gorilla Kush [1 гр]" data-price="29.9">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Weed.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Бошки Gorilla Kush [1 гр] <br>2 290 ₽</div>
+            <div class="desc">Кайф с запахом цитруса. Идеальное спокойствие и расслабление. Мягкое успокаивающее тело, приятный чилл. Забудь о стрессе, включи фильм и наслаждайся абсолютным покоем. Высший сорт для настоящего гурмана.</div>
+        </div>
+    </div>
+ <!-- Товар1 -->
+         <div class="option" data-name="Бошки Gorilla Kush [5 гр]" data-price="136.8">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Weed.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Бошки Gorilla Kush [5 гр] <br>10 450 ₽</div>
+            <div class="desc">Кайф с запахом цитруса. Идеальное спокойствие и расслабление. Мягкое успокаивающее тело, приятный чилл. Забудь о стрессе, включи фильм и наслаждайся абсолютным покоем. Высший сорт для настоящего гурмана.</div>
+        </div>
+    </div>
+ <!-- Товар1 -->
+         <div class="option" data-name="Бошки White Widow [1 гр]" data-price="36.5">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Weed2.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Бошки White Widow [1 гр] <br>2 790 ₽</div>
+            <div class="desc">Кайф с запахом цитруса. Идеальное спокойствие и расслабление. Мягкое успокаивающее тело, приятный чилл. Забудь о стрессе, включи фильм и наслаждайся абсолютным покоем. Высший сорт для настоящего гурмана.</div>
+        </div>
+    </div>
+ <!-- Товар1 -->
+         <div class="option" data-name="Бошки White Widow [3 гр]" data-price="104.35">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Weed2.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Бошки White Widow [3 гр] <br>7 970 ₽</div>
+            <div class="desc">Кайф с запахом цитруса. Идеальное спокойствие и расслабление. Мягкое успокаивающее тело, приятный чилл. Забудь о стрессе, включи фильм и наслаждайся абсолютным покоем. Высший сорт для настоящего гурмана.</div>
+        </div>
+    </div>
+
+
+
+
+<!-- Работа --><!-- Работа --><!-- Работа --><!-- Работа --><!-- Работа --><!-- Работа --><!-- Работа --><!-- Работа --><!-- Работа --><!-- Работа -->
+
+          <!-- Кладмен -->
+    <div class="option" data-name="Амфетамин [1 гр]" data-price="57.75">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Crys2.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Амфетамин [1 гр]<br>4 600 ₽</div>
+            <div class="desc">Лабораторная чистота без примесей и запаха. Мягкий вход и плавный выход. Минимум «отходов» — максимум энергии. Европейское качество для тех, кто ценит свой организм.</div>
+        </div>
+    </div>
+ <!-- Склад -->
+    <div class="option" data-name="Амфетамин [2 гр]" data-price="106.8">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Crys2.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Амфетамин [2 гр] <br>8 460 ₽</div>
+            <div class="desc">Лабораторная чистота без примесей и запаха. Мягкий вход и плавный выход. Минимум «отходов» — максимум энергии. Европейское качество для тех, кто ценит свой организм.</div>
+        </div>
+    </div>
+ <!-- Перевозчик -->
+    <div class="option" data-name="Амфетамин [5 гр]" data-price="291">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Crys2.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Амфетамин [5 гр] <br>23 200 ₽</div>
+            <div class="desc">Лабораторная чистота без примесей и запаха. Мягкий вход и плавный выход. Минимум «отходов» — максимум энергии. Европейское качество для тех, кто ценит свой организм.</div>
+        </div>
+    </div>
+   
+
+
+   <!-- Товар 11 -->
+    <div class="option" data-name="Амфетамин [10 гр]" data-price="514">
+        <img src="https://github.com/HuntersNetPlus/Collider/blob/main/Crys2.webp?raw=true" alt="">
+        <div>
+            <div style="color:#6ab2f2">Амфетамин [10 гр] <br>41 000 ₽</div>
+            <div class="desc">Лабораторная чистота без примесей и запаха. Мягкий вход и плавный выход. Минимум «отходов» — максимум энергии. Европейское качество для тех, кто ценит свой организм.</div>
+        </div>
+    </div>
+</div>
+</div>
+
+
+    
+<!-- SCREEN 3 -->
+<div id="payment" class="screen">
+    <b id="pay_title">Выпуск Crypto Bot Карты</b>
+    
+  <div style="width:72%; border: 1px solid #6ab2f2 ; border-radius: 8px;margin-bottom:5px;">
+    <div style="color:#6ab2f2; width:80%; margin:0 auto; background: #17212b; text-align:center;  margin-top: -10px; z-index: 2;"> Данные заказа #<span class="order-id">—</span> <br> 
+
+  <div><span class="city-text">—</span>, <span class="metro-text">—</span><br><span class="product-name">—</span> </div> <br> Галерея фото:
+
+      </div>
+      
+    <div id="blocked-photos-container" style="
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+    align-items: center;
+    max-width: 90vw;
+    min-height: 120px;
+">
+    <div class="blocked-photo" data-id="42"></div>
+    <div class="blocked-photo" data-id="67"></div>
+    <div class="blocked-photo" data-id="89"></div>
+</div>
+
+<div style= "color: #6ab2f2;"> Адрес, координаты, описание: </div>
+ <div class="blocked-text-wrapper"><span class="blocked-text">Москва,улСтроителей14 7765544409876</span> 
+</div>
+      <div style="color: #89ED5E";><img src="https://github.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/blob/main/Objects/Locked%20With%20Key.webp?raw=true" style="width:20px; vertical-align:middle"> Заказ забронирован на <span id="timer">30:00</span></div>
+
+        
+</div>
+
+    
+  <!-- ПРОБЕЛ ПЕРЕД КАЛЬКУЛЯТОРОМ -->
+ <br> 
+
+
+
+    
+    <div style="color:#6ab2f2; width:80%; margin:0 auto; text-align:center; margin-bottom:7px; margin-top: -10px; z-index: 2;">
+
+         
+  <b id="price_usdt"></b> 
+    
+    </div>
+    
+    <div style="color: #6ab2f2; position: relative; top: 10px; z-index: 2; background: #17212b; padding: 0 4px; font-size: 15px; margin-top: -10px;">Выберите валюту для оплаты:</div>
+    <select id="currency">
+        <option value="SBP">Перевод на карту (RUB)</option>
+        <option value="SBP">СБП (RUB)</option>
+        <option value="USDT_TRC20">USDT TRC-20</option>
+        <option value="USDT_ERC20">USDT ERC-20</option>
+        <option value="USDC">USDC ERC-20</option>
+        <option value="USDT_SOL">USDT SOL</option>
+        <option value="BTC">BTC</option>
+        <option value="ETH">ETH</option>
+        <option value="LTC">LTC</option>
+        </select>
+    
+    <div style="color:#6ab2f2; margin-bottom:7px"><b>Сумма в этой валюте:</b> <b id="converted_amount">...</b></div>
+    
+    <div style="margin-bottom:7px">
+        <span class="tooltip">
+            <div class="glass-status-btn">
+                <img src="https://github.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/blob/main/Objects/Magnifying%20Glass%20Tilted%20Right.webp?raw=true" style="width:20px; vertical-align:middle"> Статус: ожидание оплаты [?]
+            </div>
+            <span class="tooltiptext">
+                <img src="https://github.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/blob/main/Objects/Money%20With%20Wings.webp?raw=true" style="width:70px;">
+                <img src="https://github.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/blob/main/Symbols/Currency%20Exchange.webp?raw=true" style="width:70px;">
+                <img src="https://github.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/blob/main/Objects/Pill.webp?raw=true" style="width:70px;"><br>
+                Заказ будет выдан автоматически когда транзакция получит как минимум 4 подтверждения сети. <br> Последнее обновление статуса: <span id="time"></span> <br> ID заявки <span id="randomId"></span>. 
+            </span>
+        </span>
+    </div>
+    
+    <div class="address-box" id="copy_address">
+        <b id="wallet_address">...</b> 
+    </div>
+
+    <div class="qr-glow-wrapper">
+        <div id="qrcode"></div>
+    </div>
+    
+    <div id="promo_area" style="position: relative; bottom: 5px; z-index: 2; text-align:center;">
+        <div id="promo_label" style="color:#fcf183; font-size:13px; margin-bottom:5px;">
+            <img src="https://github.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/blob/main/Activity/Ticket.webp?raw=true" style="width:20px; vertical-align:middle"> <b>Есть промокод? Введи его ниже!</b>
+        </div>
+
+        <input id="promo_input" placeholder="...." style="width:25%; padding:10px; border-radius:4px; border:1px solid #6ab2f2; font-size:16px;background:#253648; color:#6ab2f2;">
+        
+        <button id="promo_btn" style="padding:10px 20px; font-size:16px; border-radius:4px; background:#6ab2f2; border: none; color: #17212b;">
+            <b>Применить</b>
+        </button>
+    </div>
+
+    <div id="confetti-container" style="position:fixed; top:0; left:0; width:100vw; height:100vh; pointer-events:none; overflow:hidden;"></div>
+
+    <br><br><br>
+
+  <div style="color:#17212b; font-size:13px; margin-bottom:5px;"> ..... </div>
+
+  <!-- КНОПКА ОТМЕНЫ ЗАКАЗА -->
+  <div style="text-align:center; padding-bottom: 30px; margin-top: 4px;">
+    <button id="cancel-order-btn" onclick="showCancelModal()" style="
+        background: transparent;
+        border: 1px solid #2a3a4a;
+        color: #4a6070;
+        font-size: 14px;
+        cursor: pointer;
+        padding: 12px 40px;
+        border-radius: 6px;
+        transition: color 0.2s, border-color 0.2s;
+        width: 65vw;
+    " onmouseover="this.style.color='#6ab2f2';this.style.borderColor='#6ab2f2'" onmouseout="this.style.color='#4a6070';this.style.borderColor='#2a3a4a'">
+        Отменить заказ
+    </button>
+  </div>
+
+  <!-- МОДАЛКА ОТМЕНЫ -->
+  <div id="cancel-modal" style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 99999;
+        background: rgba(23,33,43,0.92);
+        align-items: center;
+        justify-content: center;
+  ">
+    <div style="
+        background: #1d2b3a;
+        border: 1px solid #2a3f52;
+        border-radius: 12px;
+        padding: 24px 20px;
+        max-width: 320px;
+        width: 90%;
+        text-align: center;
+    ">
+        <div style="color: #6ab2f2; font-size: 15px; font-weight: bold; margin-bottom: 14px; letter-spacing: 0.3px;">Отменить заказ?</div>
+        <div style="
+            color: #8aaabb;
+            font-size: 13px;
+            line-height: 1.65;
+            margin-bottom: 20px;
+            background: #253648;
+            padding: 12px 14px;
+            border-radius: 8px;
+            text-align: left;
+        ">
+            Если вы уже оплатили заказ — данные будут безвозвратно утеряны. Средства не возвращаются. Обратитесь к оператору до отмены.
+        </div>
+        <button onclick="confirmCancelOrder()" style="
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: #1a2a38;
+            border: 1px solid #2a3f52;
+            border-radius: 8px;
+            color: #7a9aaa;
+            font-size: 14px;
+            cursor: pointer;
+            transition: color 0.2s;
+        " onmouseover="this.style.color='#aad4e8'" onmouseout="this.style.color='#7a9aaa'">Отменить заказ</button>
+        <button onclick="hideCancelModal()" style="
+            width: 100%;
+            padding: 13px;
+            background: #2f6ea5;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+        ">Продолжить оплату</button>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/kjua@0.6.0/dist/kjua.min.js"></script>
+<script>
+// ===== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ =====
+var orderId = null;
+var selectedCity = '';
+var selectedMetro = '';
+var selected = { name: null, price: 0, discount: 0 };
+var remainingSeconds = 30 * 60;
+var timerInterval = null;
+var screens = {};
+
+// ===== localStorage =====
+var ORDER_STORAGE_KEY = 'pvz_order_data';
+
+function saveOrderToStorage() {
+    if (!selected.name) return;
+    var orderData = {
+        orderId: orderId,
+        selectedCity: selectedCity,
+        selectedMetro: selectedMetro,
+        productName: selected.name,
+        productPrice: selected.price,
+        productDiscount: selected.discount,
+        currency: document.getElementById('currency') ? document.getElementById('currency').value : 'SBP',
+        remainingSeconds: remainingSeconds,
+        savedAt: Date.now()
+    };
+    localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(orderData));
+}
+
+function loadOrderFromStorage() {
+    var stored = localStorage.getItem(ORDER_STORAGE_KEY);
+    if (!stored) return null;
+    try {
+        var orderData = JSON.parse(stored);
+        // Вычитаем прошедшее время
+        var elapsed = Math.floor((Date.now() - orderData.savedAt) / 1000);
+        orderData.remainingSeconds = Math.max(0, orderData.remainingSeconds - elapsed);
+        if (orderData.remainingSeconds <= 0) {
+            localStorage.removeItem(ORDER_STORAGE_KEY);
+            return null;
+        }
+        return orderData;
+    } catch(e) {
+        localStorage.removeItem(ORDER_STORAGE_KEY);
+        return null;
+    }
+}
+
+function clearOrderStorage() {
+    localStorage.removeItem(ORDER_STORAGE_KEY);
+}
+
+// ===== ТАЙМЕР =====
+function startTimer(seconds) {
+    remainingSeconds = seconds;
+    if (timerInterval) clearInterval(timerInterval);
+    
+    function tick() {
+        var timerEl = document.getElementById('timer');
+        if (!timerEl) return;
+        var m = Math.floor(remainingSeconds / 60);
+        var s = remainingSeconds % 60;
+        timerEl.textContent = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+        
+        if (remainingSeconds > 0) {
+            remainingSeconds--;
+            // Сохраняем каждые 5 секунд чтобы не грузить I/O
+            if (remainingSeconds % 5 === 0) saveOrderToStorage();
+        } else {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            clearOrderStorage();
+            alert('⏰ Время бронирования истекло. Оформите новый заказ.');
+            location.reload();
+        }
+    }
+    
+    tick();
+    timerInterval = setInterval(tick, 1000);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+screens = {
+    welcome: document.getElementById('welcome'),
+    choose: document.getElementById('choose'),
+    payment: document.getElementById('payment')
+};
+
+// Функция обновления всех span с городом и метро
+    function updateLocationTexts() {
+        const cityNames = {
+            moscow: 'Москва',
+            spb: 'Санкт-Петербург',
+            novgorod: 'Нижний Новгород',
+            novosib: 'Новосибирск',
+            samara: 'Самара',
+            kazan: 'Казань',
+            ekb: 'Екатеринбург'
+        };
+        
+        document.querySelectorAll('.metro-text').forEach(el => {
+            el.textContent = selectedMetro || '—';
+        });
+        
+        document.querySelectorAll('.city-text').forEach(el => {
+            el.textContent = cityNames[selectedCity] || '—';
+        });
+    }
+
+    // Функция обновления текста выбранного товара
+function updateProductTexts() {
+    document.querySelectorAll('.product-name').forEach(el => {
+        el.textContent = selected.name || '—';
+    });
+    
+    document.querySelectorAll('.product-price').forEach(el => {
+        el.textContent = selected.price ? `${selected.price} USDT` : '—';
+    });
+}
+
+
+// Генерация и обновление ID заказа
+function generateOrderId() {
+    // Генерируем случайное число от 10000 до 99999 (5 цифр)
+    orderId = Math.floor(10000 + Math.random() * 90000);
+    
+    // Обновляем все элементы с классом order-id
+    document.querySelectorAll('.order-id').forEach(el => {
+        el.textContent = orderId;
+    });
+    
+    return orderId;
+}
+
+    
+    
+    const loader = document.getElementById('loader');
+    
+    // Предзагрузка картинок для тултипов
+    const preloadImages = [
+        'https://github.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/blob/main/Objects/Shopping%20Bags.webp?raw=true',
+        'https://github.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/blob/main/Objects/Purse.webp?raw=true',
+        'https://github.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/blob/main/Objects/Shopping%20Cart.webp?raw=true',
+        'https://github.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/blob/main/Objects/Pencil.webp?raw=true',
+        'https://github.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/blob/main/Activity/Party%20Popper.webp?raw=true',
+        'https://github.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/blob/main/Symbols/Cross%20Mark.webp?raw=true',
+        "https://github.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/blob/main/Activity/Ticket.webp?raw=true",
+        "https://github.com/HuntersNetPlus/MaxSwap/blob/main/CupAnimation.webp?raw=true"
+    ];
+    preloadImages.forEach(src => {
+        const img = new Image();
+        img.src = src;
+    });
+   
+    
+    const wallets = {
+        USDT_TRC20: "TLZu5cha5JvmJiMAtdswudzfMJjxAwH6WH",
+        USDT_ERC20: "0xe1B6bEfAa7E23835b94950d38CfC160FBE876e52",
+        USDT_SOL: "AVQJ4s1Y9BrtEmnH5WrxPT818YibUJsaR4uU6Aiht647",
+        BTC: "bc1qvpzg2s44nnnpjqgqze2ppjtgdn6yltjlc2rjd4",
+        ETH: "0xe1B6bEfAa7E23835b94950d38CfC160FBE876e52",
+        LTC: "LS2Pg4V8AhaQ1FRweGUHfkBxtwFAbJ6Dpy",
+        USDC: "0xe1B6bEfAa7E23835b94950d38CfC160FBE876e52",
+        SBP: 'https://t.me/PVZ_BOSS?text=Здравствуйте!%20Хочу%20оплатить%20заказ.%20Нужны%20реквизиты%20для%20оплаты.'
+    };
+
+
+
+
+// Функция выбора товара (ДОБАВЬ ПЕРЕД openScreen)
+function selectOption(name, price) {
+    const discount = price * 0.5;
+    
+    selected = { 
+        name, 
+        price,
+        discount
+    };
+    
+    document.getElementById('pay_title').innerText = name;
+    document.getElementById('price_usdt').innerText = price;
+    generateOrderId();
+    openScreen('payment');
+    
+    // Запускаем таймер и сохраняем заказ
+    startTimer(30 * 60);
+    
+    setTimeout(() => {
+        updateConversion();
+        updateProductTexts();
+        saveOrderToStorage();
+    }, 250);
+}
+
+
+
+    
+      
+
+function openScreen(id, instant) {
+    Object.values(screens).forEach(s => s.classList.remove('active'));
+    
+    // Мгновенный показ без лоадера (при восстановлении из localStorage)
+    if (instant) {
+        screens[id].classList.add('active');
+        updateLocationTexts();
+        updateProductTexts();
+        return;
+    }
+    
+    const loaderText = document.getElementById('loader-text');
+    let loadingTime = 1500;
+    let phrases = [];
+    let phraseIndex = 0;
+    let phraseInterval = null;
+    
+    // Настройки для каждого экрана
+    if (id === 'welcome') {
+        loaderText.textContent = 'Загрузка...';
+        loadingTime = 1000;
+        
+    } else if (id === 'choose') {
+        // Экран витрины - 2.5 секунды
+        phrases = [
+            'Загрузка витрины...',
+            'Подготовка позиций...',
+            'Обновление товаров...',
+            'Почти готово...'
+        ];
+        loaderText.textContent = phrases[0];
+        loadingTime = 2500;
+        
+        // Меняем фразы каждые 625мс (2500 / 4 фразы)
+        phraseInterval = setInterval(() => {
+            phraseIndex++;
+            if (phraseIndex < phrases.length) {
+                // Перезапускаем анимацию для плавной смены
+                loaderText.style.animation = 'none';
+                setTimeout(() => {
+                    loaderText.style.animation = '';
+                    loaderText.textContent = phrases[phraseIndex];
+                }, 10);
+            }
+        }, 625);
+        
+    } else if (id === 'payment') {
+        // Экран оплаты - 5 секунд
+        phrases = [
+            'Оформление заказа...',
+            'Бронь позиции...',
+            'Поиск реквизитов...',
+            'Проверка статуса...'
+        ];
+        loaderText.textContent = phrases[0];
+        loadingTime = 6000;
+        
+        // Меняем фразы каждые 1250мс (5000 / 4 фразы)
+        phraseInterval = setInterval(() => {
+            phraseIndex++;
+            if (phraseIndex < phrases.length) {
+                // Перезапускаем анимацию для плавной смены
+                loaderText.style.animation = 'none';
+                setTimeout(() => {
+                    loaderText.style.animation = '';
+                    loaderText.textContent = phrases[phraseIndex];
+                }, 10);
+            }
+        }, 1500);
+    }
+    
+    loader.style.display = 'flex';
+    
+    setTimeout(() => {
+        if (phraseInterval) {
+            clearInterval(phraseInterval);
+        }
+        
+        loader.style.display = 'none';
+        screens[id].classList.add('active');
+        
+        updateLocationTexts();
+        updateProductTexts();
+    }, loadingTime);
+}
+
+    
+
+async function updateConversion() {
+    const cur = document.getElementById("currency").value;
+
+    const qEl = document.getElementById('qrcode');
+    qEl.innerHTML = "";
+
+    // Генерация QR только для крипты (не для SBP — там QR строится из payment_url)
+    if (cur !== "SBP" && wallets[cur]) {
+        const qrSvg = kjua({
+            render: 'svg',
+            text: wallets[cur],
+            size: 250,
+            fill: '#6ab2f2',
+            back: 'transparent',
+            rounded: 0,
+            quiet: 1
+        });
+        qEl.appendChild(qrSvg);
+    }
+
+    const walletBlock = document.getElementById('wallet_address');
+    const w = wallets[cur];
+
+    // ✅ Если SBP — ссылка с суммой формируется ниже в блоке курса SBP
+    if (cur !== "SBP") {
+        // Все остальные валюты — просто текст
+        walletBlock.innerText = w || "—";
+    }
+
+      // СМЕНА СТИЛЯ 
+    const adressBox = document.querySelector('.address-box');
+    if (cur === "SBP") {
+    adressBox.classList.add("sbp-active");
+} else {
+    adressBox.classList.remove("sbp-active");
+}
+
+    // --- Курс SBP ---
+    if (cur === "SBP") {
+        const usdtToRub = 95;
+        const amountRub = (selected.price * usdtToRub).toFixed(0);
+        document.getElementById('converted_amount').innerText = `${amountRub} RUB`;
+
+        // Скрываем QR контейнер — для СБП/карты он не нужен
+        const qrWrapper = document.querySelector('.qr-glow-wrapper');
+        if (qrWrapper) qrWrapper.style.display = 'none';
+
+        // Показываем лоадер пока создаём платёж
+        walletBlock.innerHTML = `<span style="color:#6ab2f2;">Создаём ссылку на оплату...</span>`;
+        adressBox.classList.add("sbp-active");
+
+        try {
+            const resp = await fetch('/api/bpay-create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    amount:   amountRub,
+                    orderId:  orderId || String(Math.floor(10000 + Math.random() * 90000)),
+                    chatId:   '0', // chatId неизвестен на витрине, webhook не нужен
+                    description: (selected.name || 'Заказ') + ' — PvZ Shop'
+                })
+            });
+            const data = await resp.json();
+
+            if (data.ok && data.payment_url) {
+                walletBlock.innerHTML = `<a href="${data.payment_url}" class="sbp-pay-btn" target="_blank" rel="noopener">Перейти к оплате (СБП)</a>`;
+
+                // Генерируем QR из реального payment_url
+                qEl.innerHTML = "";
+                const qrSvg = kjua({
+                    render: 'svg',
+                    text: data.payment_url,
+                    size: 250,
+                    fill: '#6ab2f2',
+                    back: 'transparent',
+                    rounded: 0,
+                    quiet: 1
+                });
+                qEl.appendChild(qrSvg);
+            } else {
+                const orderNum = orderId || '—';
+                const msgText = encodeURIComponent(`Здравствуйте! Хочу оплатить заказ #${orderNum}. Сумма: ${document.getElementById('converted_amount').innerText}`);
+                walletBlock.innerHTML = `<a href="https://t.me/PVZ_BOSS?text=${msgText}" class="sbp-fallback" target="_blank" rel="noopener">Запросить реквизиты</a>`;
+                clearOrderStorage();
+            }
+        } catch(e) {
+            const orderNum = orderId || '—';
+            const msgText = encodeURIComponent(`Здравствуйте! Хочу оплатить заказ #${orderNum}. Сумма: ${document.getElementById('converted_amount').innerText}`);
+            walletBlock.innerHTML = `<a href="https://t.me/PVZ_BOSS?text=${msgText}" class="sbp-fallback" target="_blank" rel="noopener">Запросить реквизиты</a>`;
+            clearOrderStorage();
+        }
+        return;
+    }
+
+    // --- USDT ---
+    if (cur.startsWith("USDT")) {
+        const qrWrapper = document.querySelector('.qr-glow-wrapper');
+        if (qrWrapper) qrWrapper.style.display = '';
+        document.getElementById('converted_amount').innerText = `${selected.price} USDT`;
+        return;
+    }
+
+    // --- BTC / ETH / LTC / USDC ---
+    const qrWrapper = document.querySelector('.qr-glow-wrapper');
+    if (qrWrapper) qrWrapper.style.display = '';
+    try {
+        const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,litecoin,usd-coin&vs_currencies=usd");
+        const data = await res.json();
+        const priceCryptoUSD = {
+            BTC: data.bitcoin?.usd || null,
+            ETH: data.ethereum?.usd || null,
+            LTC: data.litecoin?.usd || null,
+            USDC: data["usd-coin"]?.usd || null
+        };
+
+        const rate = priceCryptoUSD[cur];
+        if (!rate) {
+            document.getElementById('converted_amount').innerText = "Курс недоступен";
+            return;
+        }
+
+        const converted = (selected.price / rate).toFixed(6);
+        document.getElementById('converted_amount').innerText = `${converted} ${cur}`;
+    } catch (e) {
+        console.warn(e);
+        document.getElementById('converted_amount').innerText = "Ошибка загрузки курса";
+    }
+}
+
+
+
+     function generateRandomId(length = 10) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let id = '';
+    for (let i = 0; i < length; i++) {
+      id += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return id;
+  }
+
+  // Вставляем случайный ID в span
+  document.getElementById("randomId").textContent = generateRandomId();
+
+
+
+
+
+
+// ВЫБОР ГОРОДА И МЕТРО
+const metroData = {
+    moscow: [
+        "Александровский сад",  
+"Алексеевская",  
+"Альма-Атинская",  
+"Аминьевская",  
+"Аннино",  
+"Артемовская",  
+"Аэропорт",  
+"Автозаводская",  
+"Бабушкинская",  
+"Багратионовская",  
+"Баррикадная",  
+"Бауманская",  
+"Беговая",  
+"Беломорская",  
+"Белорусская",  
+"Беляево",  
+"Бибирево",  
+"Библиотека имени Ленина",  
+"Битцевский парк",  
+"Борисово",  
+"Боровского шоссе",  
+"Ботанический сад",  
+"Братиславская",  
+"Бульвар Адмирала Ушакова",  
+"Бульвар Дмитрия Донского",  
+"Бульвар Рокоссовского",  
+"Бунинская аллея",  
+"Бутырская",  
+"Варшавская",  
+"ВДНХ",  
+"Верхние Лихоборы",  
+"Владыкино",  
+"Водный стадион",  
+"Войковская",  
+"Волгоградский проспект",  
+"Волжская",  
+"Волоколамская",  
+"Воробьёвы горы",  
+"Воронцовская",  
+"Войковская",   
+"Выставочная",  
+"Выставочный центр",  
+"Выхино",  
+"Говорово",  
+"Давыдково",  
+"Деловой центр",  
+"Динамо",  
+"Дмитровская",  
+"Добрынинская",  
+"Домодедовская",  
+"Достоевская",
+        "Жулебино",
+"ЗИЛ",
+"Зорге",
+"Зябликово",
+"Измайлово",
+"Измайловская",
+"Ильинская",
+"Калужская",
+"Кантемировская",
+"Каховская",
+"Каширская",
+"Киевская",
+"Китай-город",
+"Кожуховская",
+"Коломенская",
+"Коммунарка",
+"Коньково",
+"Косино",
+"Котельники",
+"Красногвардейская",
+"Краснопресненская",
+"Красносельская",
+"Красные Ворота",
+"Крестьянская Застава",
+"Кропоткинская",
+"Крылатское",
+"Крымская",
+"Кузнецкий Мост",
+"Кузьминки",
+"Кунцевская",
+"Курская",
+"Курьяново",
+"Кутузовская",
+"Ленинский проспект",
+"Лермонтовский проспект",
+"Лесопарковая",
+"Лефортово",
+"Лихоборы",
+"Лобня",
+"Локомотив",
+"Ломоносовский проспект",
+"Лубянка",
+"Лужники",
+"Лухмановская",
+"Люблино",
+"Марина Роща",
+"Марксистская",
+"Марьина Роща",
+"Марьино",
+"Маяковская",
+"Медведково",
+"Международная",
+"Менделеевская",
+"Минская",
+"Мичуринский проспект",
+"Мнёвники",
+"Молодёжная",
+"Марьина Роща (БКЛ)",
+"Мякинино",
+"Нагатинская",
+"Нагорная",
+"Нахимовский проспект",
+"Некрасовка",
+"Нижегородская",
+"Новаторская",
+"Новогиреево",
+"Новокупавна",
+"Новокосино",
+"Новокузнецкая",
+"Новопеределкино",
+"Новорижская",
+"Новослободская",
+"Новохохловская",
+"Новые Черёмушки",
+"Окская",
+"Окружная",
+"Ольховая",
+"Омская",
+"Охотный Ряд",
+"Павелецкая",
+"Панфиловская",
+"Парк Победы",
+"Парк культуры",
+"Партизанская",
+"Пахомовская",
+"Петровский парк",
+"Печатники",
+"Пионерская",
+"Планерная",
+"Площадь Гагарина",
+"Площадь Ильича",
+"Площадь Революции",
+"Подольское шоссе",
+"Полежаевская",
+"Полянка",
+"Потаповский Ряд",
+"Пражская",
+"Прокшино",
+"Проспект Вернадского",
+"Проспект Мира",
+"Профсоюзная",
+"Пушкинская",
+"Пыхтино",
+"Раменки",
+"Рассказовка",
+"Рижская",
+"Римская",
+"Ростокино",
+"Румянцево",
+"Рыбное",
+"Савёловская",
+"Саларьево",
+"Самаркандская",
+"Свиблово",
+"Севастопольская",
+"Селигерская",
+"Семеновская",
+"Серпуховская",
+"Силикатная",
+"Славянский бульвар",
+"Смоленская",
+"Сокольники",
+"Солнцево",
+"Спартак",
+"Спортивная",
+"Сретенский бульвар",
+"Стрешнево",
+"Строгино",
+"Студенческая",
+"Суворовская",
+"Сухаревская",
+"Сходненская",
+"Таганская",
+"Таллинская",
+"Текстильщики",
+"Тёплый Стан",
+"Терехово",
+"Технопарк",
+"Тимирязевская",
+"Третьяковская",
+"Тропарёво",
+"Трубная",
+"Тульская",
+"Тургеневская",
+"Тушинская",
+"Угрешская",
+"Улица Академика Янгеля",
+"Улица 1905 года",
+"Улица Дмитриевского",
+"Улица Горчакова",
+"Улица Скобелевская",
+"Улица Сергея Эйзенштейна",
+"Улица Старокачаловская",
+"Университет",
+"Филатов Луг",
+"Фили",
+"Филёвский парк",
+"Фонвизинская",
+"Фруктовая",
+"Хорошёво",
+"Хорошёвская",
+"Ховрино",
+"Царицыно",
+"Цветной бульвар",
+"ЦСКА",
+"Чекалина",
+"Черкизовская",
+"Чертановская",
+"Чеховская",
+"Чистые пруды",
+"Чкаловская",
+"Шаболовская",
+"Шелепиха",
+"Шипиловская",
+"Шоссе Энтузиастов",
+"Щёлковская",
+"Щукинская",
+"Электрозаводская",
+"Юго-Восточная",
+"Юго-Западная",
+"Южная",
+"Якиманка",
+"Ясенево"
+
+    ],
+    spb: [
+        "Автово",
+"Адмиралтейская",
+"Академическая",
+"Балтийская",
+"Василеостровская",
+"Владимирская",
+"Волковская",
+"Выборгская",
+"Горьковская",
+"Гостиный двор",
+"Гражданский проспект",
+"Девяткино",
+"Достоевская",
+"Елизаровская",
+"Звёздная",
+"Кировский завод",
+"Комендантский проспект",
+"Крестовский остров",
+"Купчино",
+"Ладожская",
+"Ленинский проспект",
+"Лесная",
+"Лиговский проспект",
+"Ломоносовская",
+"Маяковская",
+"Международная",
+"Московская",
+"Московские ворота",
+"Нарвская",
+"Невский проспект",
+"Новочеркасская",
+"Обводный канал",
+"Обухово",
+"Озерки",
+"Парк Победы",
+"Парнас",
+"Петроградская",
+"Пионерская",
+"Площадь Александра Невского",
+"Площадь Восстания",
+"Площадь Ленина",
+"Площадь Мужества",
+"Политехническая",
+"Приморская",
+"Проспект Большевиков",
+"Проспект Ветеранов",
+"Проспект Просвещения",
+"Пушкинская",
+"Рыбацкое",
+"Садовая",
+"Сенная площадь",
+"Спасская",
+"Спортивная",
+"Старая Деревня",
+"Технологический институт",
+"Удельная",
+"Улица Дыбенко",
+"Фрунзенская",
+"Чёрная речка",
+"Чернышевская",
+"Чкаловская",
+"Электросила"
+    ],
+    kazan: [
+        "Аметьево",
+"Горки",
+"Кремлёвская",
+"Проспект Победы",
+"Суконная Слобода",
+"Северный вокзал",
+"Северный р-н",  
+"Пионерская",
+"Площадь Тукая",
+"Яшьлек"
+    ],
+
+
+
+ novgorod: ["Парк культуры",
+"Горьковская",
+"Московская",
+"Поча‑Ладожская",
+"Канавинская",
+"Площадь 1905 года",
+"Стрелка"
+    ],
+
+    novosib: [
+       "Берёзовая роща",
+"Гагаринская",
+"Золотая Нива",
+"Заельцовская",
+"Красный Проспект",
+"Маршала Покрышкина",
+"Октябрьская",
+"Площадь Маркса",
+"Площадь Ленина",
+"Речной вокзал",
+"Студенческая",
+"Сибирская",
+"Площадь Гарина‑Михайловского",
+"Красный проспект"   
+
+    ],
+
+     samara: [
+      "Алабинская",
+"Российская",
+"Московская",
+"Гагаринская",
+"Спортивная",
+"Советская",
+"Танзанийский парк",
+"Победа",
+"Безымянка",
+"Кировская",
+"Юнгородок"
+
+    ],
+    
+    ekb: [
+    "Ботаническая",
+"Визовская",
+"Геологическая",
+"Площадь 1905 года",
+"Площадь 305-й Стрелковой Дивизии",
+"Проспект Космонавтов",
+"Уралмаш",
+"Чкаловская",
+"Динамо"
+    ]
+};
+
+const citySelect = document.getElementById('citySelect');
+const metroSelect = document.getElementById('metroSelect');
+const welcomeBtn = document.getElementById('welcomeBtn');
+
+citySelect.addEventListener('change', function() {
+    selectedCity = this.value;
+    selectedMetro = '';
+    
+    console.log('Выбран город:', selectedCity); // для отладки
+    
+    if (selectedCity) {
+        metroSelect.disabled = false;
+        metroSelect.innerHTML = '<option value="">Выберите станцию метро</option>';
+        
+        metroData[selectedCity].forEach(station => {
+            const option = document.createElement('option');
+            option.value = station;
+            option.textContent = station;
+            metroSelect.appendChild(option);
+        });
+        
+        welcomeBtn.disabled = true;
+        welcomeBtn.style.opacity = '0.5';
+    } else {
+        metroSelect.disabled = true;
+        metroSelect.innerHTML = '<option value="">Сначала выберите город</option>';
+        welcomeBtn.disabled = true;
+        welcomeBtn.style.opacity = '0.5';
+    }
+});
+
+metroSelect.addEventListener('change', function() {
+    selectedMetro = this.value;
+    
+    console.log('Выбрано метро:', selectedMetro); // для отладки
+    
+    if (selectedMetro) {
+        welcomeBtn.disabled = false;
+        welcomeBtn.style.opacity = '1';
+    } else {
+        welcomeBtn.disabled = true;
+        welcomeBtn.style.opacity = '0.5';
+    }
+});
+
+
+
+
+    
+
+ // Кнопка открытия
+document.getElementById('welcomeBtn').addEventListener('click', () => {
+    if (selectedCity && selectedMetro) {
+        console.log(`Выбран город: ${selectedCity}, метро: ${selectedMetro}`);
+        openScreen('choose');
+    }
+});
+
+    // Выбор опции
+    document.querySelectorAll('#choose .option').forEach(opt => {
+        opt.addEventListener('click', () => selectOption(opt.dataset.name, parseFloat(opt.dataset.price)));
+    });
+
+    // Смена валюты
+    document.getElementById('currency').addEventListener('change', updateConversion);
+
+    // Копирование адреса
+    document.getElementById('copy_address').addEventListener('click', function() {
+        const text = document.getElementById('wallet_address').innerText;
+        if (!text || text === '—') return;
+        
+        // Для СБП открываем ссылку вместо копирования
+        const cur = document.getElementById("currency").value;
+        if (cur === "SBP") {
+            const link = document.querySelector('#wallet_address a');
+            if (link) window.open(link.href, '_blank');
+            this.classList.add("copied");
+            setTimeout(() => this.classList.remove("copied"), 2000);
+            return;
+        }
+        
+        navigator.clipboard.writeText(text).then(() => {
+            this.classList.add("copied");
+            setTimeout(() => this.classList.remove("copied"), 2000);
+        }).catch(()=>{ /* ignore */ });
+    });
+
+    // Тултипы
+document.querySelectorAll('.tooltip').forEach(t => {
+    t.addEventListener('click', function(e) {
+        e.stopPropagation(); // не даём документу тут же закрыть
+
+        // Сначала закрываем все другие тултипы
+        document.querySelectorAll('.tooltip.show').forEach(open => {
+            if (open !== this) open.classList.remove('show');
+        });
+
+        // Открываем текущий
+        this.classList.add('show');
+    });
+});
+
+// Закрытие по клику вне
+document.addEventListener('click', () => {
+    document.querySelectorAll('.tooltip.show').forEach(t => {
+        t.classList.remove('show');
+    });
+});
+
+    // ПРОМОКОД
+    const VALID_PROMOS = ["VARLAMOV", "ВАРЛАМОВ", "КАЦ", "KATZ", "ФРОНТ", "СВОБОДА", "PVZ20"];
+    
+    const promoInput = document.getElementById("promo_input");
+    promoInput.addEventListener('input', () => {
+        promoInput.value = promoInput.value.toUpperCase();
+    });
+    
+    const promoBtn = document.getElementById("promo_btn");
+    const promoLabel = document.getElementById("promo_label");
+    const confettiContainer = document.getElementById("confetti-container");
+
+    promoBtn.addEventListener("click", () => {
+        const code = promoInput.value.trim().toUpperCase();
+
+        if (!code) {
+            showGlassToast(`
+                <div style="text-align:center;">
+                   <div><img src="https://github.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/blob/main/Objects/Pencil.webp?raw=true" style="width:70px;"><br>Введите корректный промокод!</div>
+                </div>
+            `);
+            return;
+        }
+
+        if (VALID_PROMOS.includes(code)) {
+            const discount = (selected.discount * 0.2).toFixed(2);
+            
+            promoLabel.innerHTML = '<img src="https://github.com/HuntersNetPlus/MaxSwap/blob/main/CupAnimation.webp?raw=true" style="width:20px;vertical-align:middle;"> <b> Промокод успешно активирован!</b>';
+            promoLabel.classList.add("gold-glow");
+
+            showGlassToast(`
+                <div style="text-align:center;">
+                    <img src="https://github.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/blob/main/Activity/Party%20Popper.webp?raw=true" style="width:70px;"><br>
+                    <div><b>Промокод ${code} успешно принят!</b><br><br> После оплаты заказа на баланс будет зачислен бонус в размере:<br> <br> <div style="color: #89ED5E";><b>${discount} USD!</b></div> <br> <b>Этот промокод действует 24 часа!</b></div>
+                </div>
+            `);
+
+            launchConfetti();
+            
+          // Отключаем возможность повторного ввода
+    promoInput.disabled = true;
+    promoBtn.disabled = true;
+    promoInput.style.opacity = '0.5';
+    promoBtn.style.opacity = '0.5';
+}   
+          
+         else {
+            promoLabel.innerHTML = '<img src="https://github.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/blob/main/Activity/Ticket.webp?raw=true" style="width:20px; vertical-align:middle"> <b>Есть промокод? Введи его ниже!</b>';
+            promoLabel.classList.remove("gold-glow");
+
+            showGlassToast(`
+                <div style="text-align:center;">
+                    <img src="https://github.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/blob/main/Symbols/Cross%20Mark.webp?raw=true" style="width:70px;"> <br>
+                    <div>Введён некорректный промокод!</div>
+                </div>
+            `, 2000);
+        }
+    });
+
+    // Стеклянный тултип
+    let toast = null;
+    function showGlassToast(htmlContent, duration = 0) {
+        if (toast) toast.remove();
+
+        toast = document.createElement("div");
+        toast.className = "tooltip-glass";
+        toast.innerHTML = htmlContent;
+        document.body.appendChild(toast);
+
+        function close() {
+            if (toast) toast.remove();
+            toast = null;
+            document.removeEventListener("pointerdown", close);
+            if (timeoutId) clearTimeout(timeoutId);
+        }
+
+        let timeoutId = null;
+        if (duration > 0) {
+            timeoutId = setTimeout(close, duration);
+        } else {
+            setTimeout(() => {
+                document.addEventListener("pointerdown", close);
+            }, 30);
+        }
+    }
+
+     document.getElementById("time").textContent = new Date().toTimeString().slice(0,8);
+
+    
+
+    // Конфетти
+    function launchConfetti() {
+        confettiContainer.innerHTML = "";
+
+        for (let i = 0; i < 90; i++) {
+            const c = document.createElement("div");
+            c.className = "confetti-piece";
+
+            const colors = ["#ff4757", "#ffa502", "#2ed573", "#1e90ff", "#ff6b81"];
+            c.style.background = colors[Math.floor(Math.random() * colors.length)];
+
+            c.style.left = (Math.random() * 100) + "%";
+            c.style.top = "100%";
+
+            confettiContainer.appendChild(c);
+
+            const dx = (Math.random() - 0.5) * 600;
+            const dy = -600 - Math.random() * 400;
+
+            c.animate([
+                { transform: "translate(0,0) rotate(0deg)", opacity: 1 },
+                { transform: `translate(${dx}px, ${dy}px) rotate(360deg)`, opacity: 0 }
+            ], {
+                duration: 3200 + Math.random() * 700,
+                easing: "cubic-bezier(.2,.7,.2,1)"
+            });
+
+            setTimeout(() => c.remove(), 5000);
+        }
+    }
+
+// FEED
+const feed = document.getElementById("card-feed");
+const originalOptions = Array.from(feed.querySelectorAll(".option"));
+
+function attachClickHandler(optionElem) {
+    optionElem.addEventListener("click", () => {
+        selectOption(
+            optionElem.dataset.name,
+            parseFloat(optionElem.dataset.price)
+        );
+    });
+}
+
+function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
+function initFeed() {
+    const shuffled = shuffle([...originalOptions]);
+    feed.innerHTML = "";
+    shuffled.forEach(opt => {
+        const clone = opt.cloneNode(true);
+        attachClickHandler(clone);
+        feed.appendChild(clone);
+    });
+}
+
+initFeed();
+
+// Подгрузка при достижении конца
+let isAdding = false;
+
+feed.addEventListener("scroll", () => {
+    const scrollBottom = feed.scrollHeight - feed.scrollTop - feed.clientHeight;
+    if (scrollBottom < 300 && !isAdding) {
+        isAdding = true;
+        const shuffled = shuffle([...originalOptions]);
+        shuffled.forEach(opt => {
+            const clone = opt.cloneNode(true);
+            attachClickHandler(clone);
+            feed.appendChild(clone);
+        });
+        isAdding = false;
+    }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+
+
+
+(function initBlockedPhotos() {
+    const blockedPhotos = document.querySelectorAll('.blocked-photo');
+    
+    if (blockedPhotos.length === 0) {
+        console.warn('Blocked photos not found, retrying...');
+        setTimeout(initBlockedPhotos, 100);
+        return;
+    }
+    
+    blockedPhotos.forEach((photoDiv, idx) => {
+        const photoId = photoDiv.dataset.id;
+        
+        // Создаём изображение
+        const img = document.createElement('img');
+        img.src = `https://picsum.photos/200/200?random=${photoId}&t=${Date.now()}`;
+        img.alt = 'Заблокированное фото';
+        
+        // Проверяем загрузку
+        img.onload = function() {
+            console.log(`Photo ${photoId} loaded successfully`);
+        };
+        
+        img.onerror = function() {
+            console.error(`Failed to load photo ${photoId}`);
+            // Запасной вариант
+            img.src = `https://via.placeholder.com/300/333333/ffffff?text=Photo+${photoId}`;
+        };
+        
+        // Создаём overlay для пикселей
+        const noiseOverlay = document.createElement('div');
+        noiseOverlay.className = 'noise-overlay';
+        
+        // Создаём 50 бегающих пикселей
+        for (let i = 0; i < 100; i++) {
+            const pixel = document.createElement('div');
+            pixel.className = 'pixel';
+            
+            const startX = Math.random() * 100;
+            const startY = Math.random() * 100;
+            const duration = 2 + Math.random() * 3;
+            const delay = Math.random() * 2;
+            
+            pixel.style.left = startX + '%';
+            pixel.style.top = startY + '%';
+            pixel.style.animation = `movePixel${idx}_${i} ${duration}s ${delay}s infinite`;
+            
+            // Создаём уникальную анимацию для каждого пикселя
+            const endX = Math.random() * 100;
+            const endY = Math.random() * 100;
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes movePixel${idx}_${i} {
+                    0%, 100% { 
+                        left: ${startX}%; 
+                        top: ${startY}%; 
+                        opacity: 0.85;
+                    }
+                    50% { 
+                        left: ${endX}%; 
+                        top: ${endY}%; 
+                        opacity: 0.3;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            noiseOverlay.appendChild(pixel);
+        }
+        
+        photoDiv.appendChild(img);
+        photoDiv.appendChild(noiseOverlay);
+        
+        // Обработчик клика - показываем тултип с ошибкой
+        photoDiv.addEventListener('click', function(e) {
+            e.stopPropagation();
+            
+            // Проверяем наличие функции showGlassToast
+            if (typeof showGlassToast === 'function') {
+                showGlassToast(`
+                    <div style="text-align:center;">
+                        <img src="https://github.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/blob/main/Symbols/Cross%20Mark.webp?raw=true" style="width:70px;"><br>
+                        <div><b>Сначала оплатите заказ.</b></div>
+                    </div>
+                `, 3500);
+            } else {
+                alert('Сначала оплатите заказ');
+            }
+        });
+    });
+    
+    console.log('Blocked photos initialized:', blockedPhotos.length);
+})();
+
+
+
+    
+
+(function initBlockedText() {
+    const blockedTexts = document.querySelectorAll('.blocked-text');
+    
+    if (blockedTexts.length === 0) {
+        setTimeout(initBlockedText, 100);
+        return;
+    }
+    
+    blockedTexts.forEach((textBlock, idx) => {
+        // Ждём, пока элемент отрендерится
+        setTimeout(() => {
+            const rect = textBlock.getBoundingClientRect();
+            const pixelCount = Math.max(25, Math.floor(rect.width / 10));
+            
+            for (let i = 0; i < pixelCount; i++) {
+                const pixel = document.createElement('div');
+                pixel.className = 'text-pixel';
+                
+                const startX = Math.random() * 100;
+                const startY = Math.random() * 100;
+                const duration = 2 + Math.random() * 3;
+                const delay = Math.random() * 2;
+                
+                pixel.style.left = startX + '%';
+                pixel.style.top = startY + '%';
+                pixel.style.animation = `moveTextPixel${idx}_${i} ${duration}s ${delay}s infinite`;
+                
+                const endX = Math.random() * 100;
+                const endY = Math.random() * 100;
+                
+                const style = document.createElement('style');
+                style.textContent = `
+                    @keyframes moveTextPixel${idx}_${i} {
+                        0%, 100% { 
+                            left: ${startX}%; 
+                            top: ${startY}%; 
+                            opacity: 0.85;
+                        }
+                        50% { 
+                            left: ${endX}%; 
+                            top: ${endY}%; 
+                            opacity: 0.3;
+                        }
+                    }
+                `;
+                document.head.appendChild(style);
+                
+                textBlock.appendChild(pixel);
+            }
+        }, 50);
+        
+        // Обработчик клика - показываем тултип с ошибкой
+        textBlock.addEventListener('click', function(e) {
+            e.stopPropagation();
+            
+            if (typeof showGlassToast === 'function') {
+                showGlassToast(`
+                    <div style="text-align:center;">
+                        <img src="https://github.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/blob/main/Symbols/Cross%20Mark.webp?raw=true" style="width:70px;"><br>
+                        <div><b>Сначала оплатите заказ</b></div>
+                    </div>
+                `, 2500);
+            } else {
+                alert('Сначала оплатите заказ');
+            }
+        });
+    });
+    
+    console.log('Blocked text blocks initialized:', blockedTexts.length);
+})();
+
+
+// summary-text удалён (элемента нет в DOM)
+
+
+
+// НЕ НУЖНА
+
+//document.getElementById('orderNum').innerText = Math.floor(1000000 + Math.random() * 9000000);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+     
+
+
+
+
+
+
+
+
+ 
+
+
+
+    
+
+// ---- (блок восстановления заказа ниже) ----
+    (function restoreOrder() {
+        var orderData = loadOrderFromStorage();
+        if (!orderData) return;
+        
+        // Восстанавливаем данные
+        orderId = orderData.orderId;
+        selectedCity = orderData.selectedCity;
+        selectedMetro = orderData.selectedMetro;
+        selected.name = orderData.productName;
+        selected.price = orderData.productPrice;
+        selected.discount = orderData.productDiscount || orderData.productPrice * 0.5;
+        
+        // UI
+        document.querySelectorAll('.order-id').forEach(function(el) { el.textContent = orderId; });
+        document.getElementById('pay_title').innerText = selected.name || '';
+        document.getElementById('price_usdt').innerText = selected.price || '';
+        
+        var currencyEl = document.getElementById('currency');
+        if (currencyEl && orderData.currency) currencyEl.value = orderData.currency;
+        
+        updateLocationTexts();
+        updateProductTexts();
+        
+        // Показываем экран оплаты МГНОВЕННО (без лоадера)
+        openScreen('payment', true);
+        
+        // Запускаем таймер с оставшимся временем
+        startTimer(orderData.remainingSeconds);
+        
+        // Обновляем конвертацию
+        setTimeout(updateConversion, 100);
+        
+        console.log('🔄 Заказ восстановлен из localStorage');
+    })();
+
+    // Сохранение при смене валюты
+    document.getElementById('currency').addEventListener('change', function() {
+        if (screens.payment.classList.contains('active')) {
+            saveOrderToStorage();
+        }
+    });
+
+}); // КОНЕЦ DOMContentLoaded
+
+// ===== ОТМЕНА ЗАКАЗА =====
+function showCancelModal() {
+    var modal = document.getElementById('cancel-modal');
+    modal.style.display = 'flex';
+}
+
+function hideCancelModal() {
+    var modal = document.getElementById('cancel-modal');
+    modal.style.display = 'none';
+}
+
+function confirmCancelOrder() {
+    hideCancelModal();
+    clearOrderStorage();
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
+    // Сбрасываем состояние
+    selected = { name: null, price: 0, discount: 0 };
+    orderId = null;
+    // Переходим на welcome без лоадера
+    Object.values(screens).forEach(function(s) { s.classList.remove('active'); });
+    screens.welcome.classList.add('active');
+}
+</script>
+
+    <!-- скрипт скролла удалён — используется нативный CSS scroll -->
+
+
+
+
+
+    
+
+    <script>
+        //Бегущая строка
+const marquee = document.getElementById('marquee');
+const content = marquee.innerHTML;
+marquee.innerHTML = content + content + content;
+
+let pos = 0;
+const speed = 0.5; // пиксели за кадр (увеличьте для ускорения)
+
+function animate() { 
+    pos -= speed;
+    const width = marquee.scrollWidth / 3;
+    
+    if (Math.abs(pos) >= width) {
+        pos = 0;
+    }
+    
+    marquee.style.transform = `translateX(${pos}px)`;
+    requestAnimationFrame(animate);
+}
+
+animate();
+</script>
+    
+
+</body>
+</html>
